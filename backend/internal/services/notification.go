@@ -8,9 +8,12 @@ import (
 	"net/smtp"
 	"net/url"
 	"time"
+
+	"solana-monitor/internal/models"
 )
 
 type NotificationService struct {
+	db            *models.DB
 	telegramToken string
 	smtpConfig    SMTPConfig
 	proxyURL      string
@@ -33,8 +36,9 @@ type AlertMessage struct {
 	Time      time.Time
 }
 
-func NewNotificationService(telegramToken string, smtpConfig SMTPConfig, proxyURL string) *NotificationService {
+func NewNotificationService(db *models.DB, telegramToken string, smtpConfig SMTPConfig, proxyURL string) *NotificationService {
 	return &NotificationService{
+		db:            db,
 		telegramToken: telegramToken,
 		smtpConfig:    smtpConfig,
 		proxyURL:      proxyURL,
@@ -106,9 +110,47 @@ func (n *NotificationService) SendEmail(to, subject, body string) error {
 }
 
 func (n *NotificationService) SendAlert(msg AlertMessage) error {
-	// TODO: integrate with database to get notifications
-	// For now, just log the alert
-	fmt.Printf("Alert: %s balance changed from %.4f to %.4f\n", msg.Address, msg.OldValue, msg.NewValue)
+	if n.db == nil {
+		fmt.Printf("Alert: %s balance changed from %.4f to %.4f\n", msg.Address, msg.OldValue, msg.NewValue)
+		return nil
+	}
+
+	// Get enabled notifications from database
+	notifications, err := n.db.GetAllNotifications()
+	if err != nil {
+		fmt.Printf("Failed to get notifications: %v\n", err)
+		return err
+	}
+
+	formatted := n.FormatTelegramAlert(msg)
+	emailBody := n.FormatEmailAlert(msg)
+
+	for _, notif := range notifications {
+		if !notif.Enabled {
+			continue
+		}
+
+		config := notif.GetConfig()
+
+		if notif.Type == "telegram" {
+			if chatID, ok := config["chat_id"]; ok {
+				if err := n.SendTelegram(chatID, formatted); err != nil {
+					fmt.Printf("Failed to send Telegram notification: %v\n", err)
+				} else {
+					fmt.Printf("Telegram notification sent to %s\n", chatID)
+				}
+			}
+		} else if notif.Type == "email" {
+			if to, ok := config["email"]; ok {
+				if err := n.SendEmail(to, "Solana Wallet Alert", emailBody); err != nil {
+					fmt.Printf("Failed to send email notification: %v\n", err)
+				} else {
+					fmt.Printf("Email notification sent to %s\n", to)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -305,5 +305,15 @@ func (h *Handler) GetStats(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, stats)
+
+	alertStats, _ := h.db.GetAlertStats()
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_addresses":    stats["addresses"],
+		"total_rules":        stats["rules"],
+		"total_notifications": stats["notifications"],
+		"total_alerts":       alertStats["total"],
+		"today_alerts":       alertStats["today"],
+		"monitor_running":    true,
+	})
 }

@@ -37,15 +37,16 @@ type Notification struct {
 }
 
 type Alert struct {
-	ID        int64     `json:"id"`
-	AddressID int64     `json:"address_id"`
-	RuleID    *int64    `json:"rule_id,omitempty"`
-	AlertType string    `json:"alert_type"`
-	OldValue  float64   `json:"old_value"`
-	NewValue  float64   `json:"new_value"`
-	Message   string    `json:"message"`
-	CreatedAt time.Time `json:"created_at"`
-	Address   *Address  `json:"address,omitempty"`
+	ID          int64     `json:"id"`
+	AddressID   int64     `json:"address_id"`
+	RuleID      *int64    `json:"rule_id,omitempty"`
+	AlertType   string    `json:"alert_type"`
+	OldValue    float64   `json:"old_value"`
+	NewValue    float64   `json:"new_value"`
+	Message     string    `json:"message"`
+	CreatedAt   time.Time `json:"sent_at"`
+	Address     *Address  `json:"address,omitempty"`
+	AddressStr  string    `json:"address"` // Plain address string for frontend
 }
 
 type DB struct {

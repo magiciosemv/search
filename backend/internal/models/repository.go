@@ -200,6 +200,7 @@ func (db *DB) GetAllAlerts(limit, offset int) ([]Alert, error) {
 		}
 		if addr.Address != "" {
 			al.Address = &addr
+			al.AddressStr = addr.Address
 		}
 		alerts = append(alerts, al)
 	}
