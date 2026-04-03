@@ -26,10 +26,9 @@
 
 <script setup>
 const navItems = [
-  { path: '/', name: 'Dashboard', icon: '📊' },
-  { path: '/addresses', name: 'Addresses', icon: '📍' },
-  { path: '/rules', name: 'Rules', icon: '📋' },
-  { path: '/notifications', name: 'Notifications', icon: '🔔' },
-  { path: '/alerts', name: 'Alerts', icon: '⚠️' },
+  { path: '/', name: 'Dashboard', icon: '◉' },
+  { path: '/addresses', name: 'Wallets', icon: '◎' },
+  { path: '/notifications', name: 'Notifications', icon: '◈' },
+  { path: '/alerts', name: 'Alerts', icon: '◇' },
 ]
 </script>

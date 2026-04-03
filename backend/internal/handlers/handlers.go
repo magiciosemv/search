@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"solana-monitor/internal/models"
@@ -56,6 +57,16 @@ func (h *Handler) CreateAddress(c *gin.Context) {
 		h.db.UpdateAddressBalance(addr.ID, balance)
 		addr.Balance = balance
 	}
+
+	// Send notification about new wallet
+	h.notifier.SendAlert(services.AlertMessage{
+		Address:   req.Address,
+		Label:     req.Label,
+		AlertType: "wallet_added",
+		OldValue:  0,
+		NewValue:  balance,
+		Time:      time.Now(),
+	})
 
 	c.JSON(http.StatusCreated, addr)
 }

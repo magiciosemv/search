@@ -25,5 +25,5 @@ go/bin/
 Thumbs.db
 
 # Data
-data/*.db
-data/*.db-journal
+data/
+backend/data/

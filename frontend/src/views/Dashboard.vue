@@ -5,20 +5,20 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
-        <div class="text-gray-500 dark:text-gray-400 text-sm">Total Addresses</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Total Wallets</div>
         <div class="text-2xl font-bold">{{ stats.total_addresses || 0 }}</div>
       </div>
       <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
-        <div class="text-gray-500 dark:text-gray-400 text-sm">Active Rules</div>
-        <div class="text-2xl font-bold">{{ stats.total_rules || 0 }}</div>
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Notifications</div>
+        <div class="text-2xl font-bold">{{ stats.total_notifications || 0 }}</div>
       </div>
       <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
         <div class="text-gray-500 dark:text-gray-400 text-sm">Total Alerts</div>
-        <div class="text-2xl font-bold">{{ stats.alerts?.total_alerts || 0 }}</div>
+        <div class="text-2xl font-bold">{{ stats.total_alerts || 0 }}</div>
       </div>
       <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
         <div class="text-gray-500 dark:text-gray-400 text-sm">Today's Alerts</div>
-        <div class="text-2xl font-bold">{{ stats.alerts?.today_alerts || 0 }}</div>
+        <div class="text-2xl font-bold">{{ stats.today_alerts || 0 }}</div>
       </div>
     </div>
 
@@ -39,19 +39,19 @@
     <!-- Recent Alerts -->
     <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
       <h2 class="text-lg font-semibold mb-4">Recent Alerts</h2>
-      <div v-if="recentAlerts.length === 0" class="text-gray-500 text-center py-8">
+      <div v-if="!recentAlerts || recentAlerts.length === 0" class="text-gray-500 text-center py-8">
         No alerts yet
       </div>
       <div v-else class="space-y-3">
         <div v-for="alert in recentAlerts" :key="alert.id"
           class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded">
           <div>
-            <div class="font-mono text-sm">{{ truncateAddress(alert.address) }}</div>
+            <div class="font-mono text-sm">{{ truncateAddress(alert.address || alert.addressStr) }}</div>
             <div class="text-xs text-gray-500">{{ formatDate(alert.sent_at) }}</div>
           </div>
           <div class="text-right">
             <div class="font-semibold">{{ alert.alert_type }}</div>
-            <div class="text-xs text-gray-500">{{ alert.old_value.toFixed(4) }} → {{ alert.new_value.toFixed(4) }}</div>
+            <div class="text-xs text-gray-500">{{ (alert.old_value || 0).toFixed(4) }} → {{ (alert.new_value || 0).toFixed(4) }}</div>
           </div>
         </div>
       </div>

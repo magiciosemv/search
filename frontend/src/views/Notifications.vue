@@ -4,60 +4,89 @@
       <h1 class="text-2xl font-bold">Notifications</h1>
       <button @click="showAddModal = true"
         class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-        Add Notification
+        Add Channel
       </button>
     </div>
 
-    <!-- Notifications List -->
+    <!-- Notification Channels -->
     <div class="grid gap-4">
       <div v-for="notif in notifications" :key="notif.id"
-        class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-semibold">{{ notif.name }}</div>
-            <div class="text-sm text-gray-500">{{ notif.type }} - {{ getConfigValue(notif) }}</div>
-          </div>
+        class="bg-white dark:bg-slate-800 p-5 rounded-lg shadow">
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3">
-            <span :class="notif.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
-              class="px-2 py-1 rounded text-xs">
-              {{ notif.enabled ? 'Enabled' : 'Disabled' }}
-            </span>
-            <button @click="testNotification(notif.id)" class="text-purple-600 hover:text-purple-800 text-sm">
-              Test
-            </button>
-            <button @click="deleteNotification(notif.id)" class="text-red-600 hover:text-red-800 text-sm">
-              Delete
-            </button>
+            <span class="text-2xl">{{ notif.type === 'telegram' ? '&#9993;' : '&#9993;' }}</span>
+            <div>
+              <div class="font-semibold text-lg">{{ notif.name }}</div>
+              <div class="text-sm text-gray-500">{{ notif.type === 'telegram' ? 'Telegram' : 'Email' }}</div>
+            </div>
+          </div>
+          <span :class="notif.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+            class="px-3 py-1 rounded-full text-xs font-medium cursor-pointer"
+            @click="toggleNotification(notif)">
+            {{ notif.enabled ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 text-sm">
+          <div v-if="notif.type === 'telegram'">
+            <span class="text-gray-500">Chat ID:</span>
+            <span class="font-mono ml-2">{{ getConfigValue(notif) }}</span>
+          </div>
+          <div v-else>
+            <span class="text-gray-500">Email:</span>
+            <span class="ml-2">{{ getConfigValue(notif) }}</span>
           </div>
         </div>
+
+        <div class="flex justify-end gap-3 mt-4">
+          <button @click="testNotification(notif.id)"
+            class="px-3 py-1.5 text-sm border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50">
+            Test
+          </button>
+          <button @click="deleteNotification(notif.id)"
+            class="px-3 py-1.5 text-sm border border-red-400 text-red-600 rounded-lg hover:bg-red-50">
+            Delete
+          </button>
+        </div>
       </div>
-      <div v-if="notifications.length === 0" class="bg-white dark:bg-slate-800 p-8 rounded-lg shadow text-center text-gray-500">
-        No notifications configured yet
+
+      <div v-if="!notifications || notifications.length === 0"
+        class="bg-white dark:bg-slate-800 p-12 rounded-lg shadow text-center">
+        <div class="text-gray-400 mb-2">No notification channels configured</div>
+        <div class="text-gray-400 text-sm">Add a Telegram or Email channel to receive alerts</div>
       </div>
     </div>
 
     <!-- Add Notification Modal -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-slate-800 p-6 rounded-lg w-full max-w-md">
-        <h2 class="text-xl font-bold mb-4">Add Notification</h2>
+        <h2 class="text-xl font-bold mb-4">Add Notification Channel</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium mb-1">Name</label>
+            <label class="block text-sm font-medium mb-1">Channel Name</label>
             <input v-model="newNotif.name" type="text" placeholder="e.g., My Telegram"
               class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Type</label>
-            <select v-model="newNotif.type"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600">
-              <option value="telegram">Telegram</option>
-              <option value="email">Email</option>
-            </select>
+            <div class="flex gap-2">
+              <button @click="newNotif.type = 'telegram'"
+                :class="newNotif.type === 'telegram' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'"
+                class="flex-1 px-4 py-2 rounded-lg text-sm font-medium">
+                Telegram
+              </button>
+              <button @click="newNotif.type = 'email'"
+                :class="newNotif.type === 'email' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'"
+                class="flex-1 px-4 py-2 rounded-lg text-sm font-medium">
+                Email
+              </button>
+            </div>
           </div>
           <div v-if="newNotif.type === 'telegram'">
-            <label class="block text-sm font-medium mb-1">Chat ID</label>
-            <input v-model="newNotif.config.chat_id" type="text" placeholder="Your Telegram Chat ID"
+            <label class="block text-sm font-medium mb-1">Telegram Chat ID</label>
+            <input v-model="newNotif.config.chat_id" type="text" placeholder="Enter your Telegram Chat ID"
               class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+            <p class="text-xs text-gray-400 mt-1">Send /start to @BotFather, then message your bot to get Chat ID</p>
           </div>
           <div v-if="newNotif.type === 'email'">
             <label class="block text-sm font-medium mb-1">Email Address</label>
@@ -92,7 +121,8 @@ const newNotif = ref({
 const fetchNotifications = async () => {
   try {
     const res = await fetch('/api/notifications')
-    notifications.value = await res.json()
+    const data = await res.json()
+    notifications.value = data || []
   } catch (e) {
     console.error('Failed to fetch notifications:', e)
   }
@@ -135,13 +165,32 @@ const addNotification = async () => {
   }
 }
 
+const toggleNotification = async (notif) => {
+  try {
+    await fetch(`/api/notifications/${notif.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: notif.name,
+        type: notif.type,
+        config: notif.config_map || {},
+        enabled: !notif.enabled
+      })
+    })
+    fetchNotifications()
+  } catch (e) {
+    alert('Failed to toggle notification')
+  }
+}
+
 const testNotification = async (id) => {
   try {
     const res = await fetch(`/api/notifications/${id}/test`, { method: 'POST' })
     if (res.ok) {
       alert('Test notification sent!')
     } else {
-      alert('Failed to send test notification')
+      const err = await res.json()
+      alert(err.error || 'Failed to send test notification')
     }
   } catch (e) {
     alert('Failed to send test notification')

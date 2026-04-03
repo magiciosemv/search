@@ -157,19 +157,32 @@ func (n *NotificationService) SendAlert(msg AlertMessage) error {
 func (n *NotificationService) FormatTelegramAlert(msg AlertMessage) string {
 	var emoji string
 
-	change := msg.NewValue - msg.OldValue
-
-	if change > 0 {
-		emoji = "📈"
-	} else if change < 0 {
-		emoji = "📉"
+	if msg.AlertType == "wallet_added" {
+		emoji = "➕"
 	} else {
-		emoji = "➡️"
+		change := msg.NewValue - msg.OldValue
+		if change > 0 {
+			emoji = "📈"
+		} else if change < 0 {
+			emoji = "📉"
+		} else {
+			emoji = "➡️"
+		}
 	}
 
 	address := msg.Address
 	if len(address) > 8 {
 		address = address[:4] + "..." + address[len(address)-4:]
+	}
+
+	if msg.AlertType == "wallet_added" {
+		return fmt.Sprintf(`%s <b>New Wallet Added</b>
+
+📍 <b>Address:</b> <code>%s</code>
+🏷️ <b>Label:</b> %s
+💰 <b>Balance:</b> %.4f SOL
+
+⏰ %s`, emoji, address, msg.Label, msg.NewValue, msg.Time.Format("2006-01-02 15:04:05"))
 	}
 
 	return fmt.Sprintf(`%s <b>Solana Wallet Alert</b>
@@ -178,12 +191,20 @@ func (n *NotificationService) FormatTelegramAlert(msg AlertMessage) string {
 💰 <b>Balance:</b> %.4f → %.4f SOL
 📊 <b>Change:</b> %s%.4f SOL
 
-⏰ %s`, emoji, address, msg.OldValue, msg.NewValue, emoji, change, msg.Time.Format("2006-01-02 15:04:05"))
+⏰ %s`, emoji, address, msg.OldValue, msg.NewValue, emoji, msg.NewValue - msg.OldValue, msg.Time.Format("2006-01-02 15:04:05"))
 }
 
 func (n *NotificationService) FormatEmailAlert(msg AlertMessage) string {
-	change := msg.NewValue - msg.OldValue
+	if msg.AlertType == "wallet_added" {
+		return fmt.Sprintf(`New Wallet Added
 
+Address: %s
+Label: %s
+Balance: %.4f SOL
+Time: %s`, msg.Address, msg.Label, msg.NewValue, msg.Time.Format("2006-01-02 15:04:05"))
+	}
+
+	change := msg.NewValue - msg.OldValue
 	return fmt.Sprintf(`Solana Wallet Alert
 
 Address: %s
