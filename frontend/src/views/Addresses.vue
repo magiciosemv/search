@@ -1,57 +1,79 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">Wallets</h1>
-      <button @click="showAddModal = true" class="btn-primary">Add Wallet</button>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Wallets</h1>
+        <p class="page-subtitle">Monitored Solana addresses</p>
+      </div>
+      <button class="btn btn-primary" @click="showAddModal = true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Wallet
+      </button>
     </div>
 
-    <div class="grid gap-4">
-      <div v-for="addr in addresses" :key="addr.id" class="card p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-mono text-sm">{{ addr.address }}</div>
-            <div class="text-sm text-gray-500">{{ addr.label || 'No label' }}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-2xl font-bold">{{ formatSOL(addr.balance) }} <span class="text-sm font-normal">SOL</span></div>
-            <div class="text-xs text-gray-500">{{ formatDate(addr.updated_at) }}</div>
-          </div>
-        </div>
-        <div class="mt-4 pt-4 border-t dark:border-slate-700">
-          <div class="flex items-center gap-3">
-            <label class="text-sm text-gray-500">Alert threshold:</label>
-            <input v-model.number="addr.threshold" @change="saveThreshold(addr)" type="number" step="0.1" min="0"
-              class="w-24 px-2 py-1.5 border rounded-lg dark:bg-slate-700 dark:border-slate-600 text-sm" />
-            <span class="text-sm text-gray-400">SOL</span>
-            <div class="ml-auto flex gap-2">
-              <button @click="refreshBalance(addr.id)" class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                Refresh
-              </button>
-              <button @click="deleteAddress(addr.id)" class="text-red-500 hover:text-red-700 text-sm font-medium">
-                Delete
-              </button>
+    <div class="wallet-grid stagger">
+      <div v-for="(addr, i) in addresses" :key="addr.id"
+        class="wallet-card card"
+        style="animation: fadeInUp 0.5s var(--ease-out) both"
+        :style="{ animationDelay: i * 80 + 'ms' }">
+        <div class="wallet-card-top">
+          <div class="wallet-identity">
+            <div class="wallet-avatar">{{ (addr.label || 'W')[0].toUpperCase() }}</div>
+            <div>
+              <div class="wallet-label">{{ addr.label || 'Unnamed' }}</div>
+              <div class="wallet-addr font-mono" :title="addr.address">{{ truncateAddress(addr.address) }}</div>
             </div>
           </div>
+          <div class="wallet-balance">
+            <div class="balance-value font-mono">{{ formatSOL(addr.balance) }}</div>
+            <div class="balance-unit">SOL</div>
+          </div>
+        </div>
+
+        <div class="wallet-card-footer">
+          <div class="threshold-group">
+            <span class="threshold-label">Threshold</span>
+            <input v-model.number="addr.threshold" @change="saveThreshold(addr)"
+              type="number" step="0.1" min="0"
+              class="input-field input-mono threshold-input" />
+            <span class="threshold-unit">SOL</span>
+          </div>
+          <div class="wallet-actions">
+            <button @click="refreshBalance(addr.id)" class="btn btn-ghost btn-sm" title="Refresh balance">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Refresh
+            </button>
+            <button @click="deleteAddress(addr.id)" class="btn btn-danger btn-sm" title="Remove wallet">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <div class="wallet-updated text-muted" v-if="addr.updated_at">
+          Last updated: {{ formatDate(addr.updated_at) }}
         </div>
       </div>
-      <EmptyState v-if="addresses.length === 0" message="No wallets added yet" />
     </div>
 
-    <Modal v-model="showAddModal" title="Add Wallet" @submit="addAddress">
+    <EmptyState v-if="addresses.length === 0" title="No wallets yet"
+      message="Add a Solana address to start monitoring" />
+
+    <Modal v-model="showAddModal" title="Add Wallet" submit-label="Add" @submit="addAddress">
       <div>
-        <label class="block text-sm font-medium mb-1">Solana Address</label>
-        <input v-model="newAddress.address" type="text" placeholder="Enter Solana address"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+        <label class="field-label">Solana Address</label>
+        <input v-model="newAddress.address" type="text" placeholder="Enter wallet address..."
+          class="input-field input-mono" />
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Label (optional)</label>
-        <input v-model="newAddress.label" type="text" placeholder="e.g., Main Wallet"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+        <label class="field-label">Label (optional)</label>
+        <input v-model="newAddress.label" type="text" placeholder="e.g. Main Wallet"
+          class="input-field" />
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Alert threshold (SOL)</label>
+        <label class="field-label">Alert Threshold (SOL)</label>
         <input v-model.number="newAddress.threshold" type="number" step="0.1" min="0"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+          class="input-field input-mono" />
       </div>
     </Modal>
   </div>
@@ -59,8 +81,8 @@
 
 <script setup>
 import { ref } from 'vue'
-import { apiPost, apiDelete, useFetch } from '../utils/api.js'
-import { formatDate, formatSOL } from '../utils/format.js'
+import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
+import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
@@ -74,28 +96,22 @@ const addAddress = async () => {
     showAddModal.value = false
     newAddress.value = { address: '', label: '', threshold: 1 }
     addresses.value = await fetch('/api/addresses').then(r => r.json())
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 
 const refreshBalance = async (id) => {
   try {
     await apiPost(`/api/addresses/${id}/refresh`, {})
     addresses.value = await fetch('/api/addresses').then(r => r.json())
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 
 const deleteAddress = async (id) => {
-  if (!confirm('Are you sure?')) return
+  if (!confirm('Remove this wallet?')) return
   try {
     await apiDelete(`/api/addresses/${id}`)
     addresses.value = await fetch('/api/addresses').then(r => r.json())
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 
 const saveThreshold = async (addr) => {
@@ -107,8 +123,133 @@ const saveThreshold = async (addr) => {
     } else if (addr.threshold > 0) {
       await apiPost('/api/rules', { address_id: addr.id, rule_type: 'balance_change', threshold: addr.threshold })
     }
-  } catch (e) {
-    console.error('Failed to save threshold:', e)
-  }
+  } catch (e) { console.error('Failed to save threshold:', e) }
 }
 </script>
+
+<style scoped>
+.wallet-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wallet-card {
+  padding: 20px 24px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.wallet-card:hover {
+  transform: translateY(-1px);
+}
+
+.wallet-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.wallet-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wallet-avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05));
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--cyan-bright);
+  flex-shrink: 0;
+}
+
+.wallet-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.wallet-addr {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.wallet-balance {
+  text-align: right;
+}
+
+.balance-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.balance-unit {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wallet-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.threshold-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.threshold-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.threshold-input {
+  width: 80px !important;
+  padding: 6px 10px !important;
+  font-size: 0.8125rem !important;
+}
+
+.threshold-unit {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wallet-updated {
+  font-size: 0.6875rem;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+}
+
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+</style>

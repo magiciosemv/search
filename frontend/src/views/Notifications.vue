@@ -1,87 +1,100 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">Notifications</h1>
-      <button @click="showAddModal = true" class="btn-primary">Add Channel</button>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-subtitle">Alert delivery channels</p>
+      </div>
+      <button class="btn btn-primary" @click="showAddModal = true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Channel
+      </button>
     </div>
 
-    <div class="grid gap-4">
-      <div v-for="notif in notifications" :key="notif.id" class="card p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              :class="notif.type === 'telegram' ? 'bg-blue-500' : 'bg-amber-500'">
-              {{ notif.type === 'telegram' ? 'TG' : 'EM' }}
-            </span>
+    <div class="notif-grid stagger">
+      <div v-for="(notif, i) in notifications" :key="notif.id"
+        class="notif-card card"
+        :class="notif.type"
+        style="animation: fadeInUp 0.5s var(--ease-out) both"
+        :style="{ animationDelay: i * 80 + 'ms' }">
+        <div class="notif-top">
+          <div class="notif-identity">
+            <div class="notif-type-icon" :class="notif.type">
+              <svg v-if="notif.type === 'telegram'" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+            </div>
             <div>
-              <div class="font-semibold text-lg">{{ notif.name }}</div>
-              <div class="text-sm text-gray-500">{{ notif.type === 'telegram' ? 'Telegram' : 'Email' }}</div>
+              <div class="notif-name">{{ notif.name }}</div>
+              <div class="notif-type-label">{{ notif.type === 'telegram' ? 'Telegram Bot' : 'Email SMTP' }}</div>
             </div>
           </div>
-          <span :class="notif.enabled ? 'badge badge-success' : 'badge badge-muted'"
-            class="cursor-pointer select-none" @click="toggleNotification(notif)">
-            {{ notif.enabled ? 'Enabled' : 'Disabled' }}
-          </span>
+          <button class="toggle-btn" :class="{ on: notif.enabled }" @click="toggleNotification(notif)">
+            <div class="toggle-track">
+              <div class="toggle-thumb"></div>
+            </div>
+            <span class="toggle-text">{{ notif.enabled ? 'Active' : 'Off' }}</span>
+          </button>
         </div>
 
-        <div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 text-sm">
-          <span class="text-gray-500">{{ notif.type === 'telegram' ? 'Chat ID:' : 'Email:' }}</span>
-          <span class="font-mono ml-2">{{ getConfigValue(notif) }}</span>
+        <div class="notif-config">
+          <span class="config-key">{{ notif.type === 'telegram' ? 'Chat ID' : 'Address' }}</span>
+          <span class="config-value font-mono">{{ getConfigValue(notif) }}</span>
         </div>
 
-        <div class="flex justify-end gap-2 mt-4">
-          <button @click="testNotification(notif.id)"
-            class="px-3 py-1.5 text-sm border border-purple-300 text-purple-600 rounded-lg hover:bg-purple-50">
+        <div class="notif-actions">
+          <button @click="testNotification(notif.id)" class="btn btn-ghost btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             Test
           </button>
-          <button @click="deleteNotification(notif.id)"
-            class="px-3 py-1.5 text-sm border border-red-300 text-red-500 rounded-lg hover:bg-red-50">
+          <button @click="deleteNotification(notif.id)" class="btn btn-danger btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             Delete
           </button>
         </div>
       </div>
-
-      <EmptyState v-if="!notifications || notifications.length === 0"
-        title="No notification channels configured"
-        message="Add a Telegram or Email channel to receive alerts" />
     </div>
 
-    <Modal v-model="showAddModal" title="Add Channel" @submit="addNotification">
+    <EmptyState v-if="!notifications || notifications.length === 0"
+      title="No channels configured"
+      message="Add a Telegram bot or email to receive alerts" />
+
+    <Modal v-model="showAddModal" title="Add Channel" submit-label="Add" @submit="addNotification">
       <div>
-        <label class="block text-sm font-medium mb-1">Channel Name</label>
-        <input v-model="newNotif.name" type="text" placeholder="e.g., My Telegram"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+        <label class="field-label">Channel Name</label>
+        <input v-model="newNotif.name" type="text" placeholder="e.g. My Telegram"
+          class="input-field" />
       </div>
       <div>
-        <label class="block text-sm font-medium mb-2">Type</label>
-        <div class="flex gap-2">
-          <button @click="newNotif.type = 'telegram'"
-            :class="newNotif.type === 'telegram' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'"
-            class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition">
+        <label class="field-label">Type</label>
+        <div class="type-selector">
+          <button @click="newNotif.type = 'telegram'" class="type-option"
+            :class="{ active: newNotif.type === 'telegram' }">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
             Telegram
           </button>
-          <button @click="newNotif.type = 'email'"
-            :class="newNotif.type === 'email' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'"
-            class="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition">
+          <button @click="newNotif.type = 'email'" class="type-option"
+            :class="{ active: newNotif.type === 'email' }">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
             Email
           </button>
         </div>
       </div>
       <div v-if="newNotif.type === 'telegram'">
-        <label class="block text-sm font-medium mb-1">Telegram Chat ID</label>
-        <input v-model="newNotif.config.chat_id" type="text" placeholder="Your Telegram Chat ID"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+        <label class="field-label">Telegram Chat ID</label>
+        <input v-model="newNotif.config.chat_id" type="text" placeholder="Enter Chat ID..."
+          class="input-field input-mono" />
       </div>
       <div v-if="newNotif.type === 'email'">
-        <label class="block text-sm font-medium mb-1">Email Address</label>
+        <label class="field-label">Email Address</label>
         <input v-model="newNotif.config.email" type="email" placeholder="your@email.com"
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600" />
+          class="input-field input-mono" />
       </div>
     </Modal>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -104,9 +117,8 @@ const addNotification = async () => {
     await apiPost('/api/notifications', { name: newNotif.value.name, type: newNotif.value.type, config })
     showAddModal.value = false
     newNotif.value = { name: '', type: 'telegram', config: { chat_id: '', email: '' } }
-  } catch (e) {
-    alert(e.message)
-  }
+    notifications.value = await fetch('/api/notifications').then(r => r.json())
+  } catch (e) { alert(e.message) }
 }
 
 const toggleNotification = async (notif) => {
@@ -116,27 +128,205 @@ const toggleNotification = async (notif) => {
       config: notif.config_map || {}, enabled: !notif.enabled
     })
     notifications.value = await fetch('/api/notifications').then(r => r.json())
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 
 const testNotification = async (id) => {
   try {
     await apiPost(`/api/notifications/${id}/test`, {})
     alert('Test notification sent!')
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 
 const deleteNotification = async (id) => {
-  if (!confirm('Are you sure?')) return
+  if (!confirm('Remove this channel?')) return
   try {
     await apiDelete(`/api/notifications/${id}`)
     notifications.value = await fetch('/api/notifications').then(r => r.json())
-  } catch (e) {
-    alert(e.message)
-  }
+  } catch (e) { alert(e.message) }
 }
 </script>
+
+<style scoped>
+.notif-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notif-card {
+  padding: 20px 24px;
+}
+
+.notif-card.telegram { border-left: 3px solid #229ed9; }
+.notif-card.email { border-left: 3px solid var(--amber-base); }
+
+.notif-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.notif-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.notif-type-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.notif-type-icon.telegram {
+  background: rgba(34, 158, 217, 0.12);
+  color: #229ed9;
+}
+
+.notif-type-icon.email {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--amber-bright);
+}
+
+.notif-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.notif-type-label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Toggle */
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggle-track {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.toggle-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all 0.25s var(--ease-out);
+}
+
+.toggle-btn.on .toggle-track {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.toggle-btn.on .toggle-thumb {
+  left: 20px;
+  background: var(--green-bright);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.toggle-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.toggle-btn.on .toggle-text { color: var(--green-bright); }
+
+/* Config */
+.notif-config {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.config-key {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.config-value {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.notif-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Type selector */
+.type-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.type-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.type-option:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.type-option.active {
+  border-color: var(--cyan-base);
+  background: rgba(6, 182, 212, 0.08);
+  color: var(--cyan-bright);
+}
+
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+</style>
