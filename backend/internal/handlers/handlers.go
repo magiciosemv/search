@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -26,13 +27,42 @@ func NewHandler(db *models.DB, solana *services.SolanaService, monitor *services
 	}
 }
 
+// respondError sends a structured JSON error response.
+func respondError(c *gin.Context, status int, code string, message string) {
+	c.JSON(status, gin.H{"error": message, "code": code})
+}
+
+// respondOK sends a structured success response.
+func respondOK(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, data)
+}
+
+// parseID parses a URL path parameter as a positive int64 ID.
+// Returns 0 and sends a 400 error if invalid.
+func parseID(c *gin.Context) int64 {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		respondError(c, http.StatusBadRequest, "INVALID_ID", "id must be a positive integer")
+		return 0
+	}
+	return id
+}
+
+// solanaAddressRegex matches base58-encoded Solana addresses (32-44 chars).
+var solanaAddressRegex = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
+
+// isValidSolanaAddress checks if the string looks like a valid Solana address.
+func isValidSolanaAddress(addr string) bool {
+	return solanaAddressRegex.MatchString(addr)
+}
+
 func (h *Handler) GetAddresses(c *gin.Context) {
 	addresses, err := h.db.GetAllAddresses()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch addresses")
 		return
 	}
-	c.JSON(http.StatusOK, addresses)
+	respondOK(c, addresses)
 }
 
 func (h *Handler) CreateAddress(c *gin.Context) {
@@ -41,13 +71,18 @@ func (h *Handler) CreateAddress(c *gin.Context) {
 		Label   string `json:"label"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "address is required")
+		return
+	}
+
+	if !isValidSolanaAddress(req.Address) {
+		respondError(c, http.StatusBadRequest, "INVALID_ADDRESS", "invalid Solana address format (base58, 32-44 characters)")
 		return
 	}
 
 	addr, err := h.db.CreateAddress(req.Address, req.Label)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusConflict, "DUPLICATE_ADDRESS", "this address already exists")
 		return
 	}
 
@@ -72,68 +107,84 @@ func (h *Handler) CreateAddress(c *gin.Context) {
 }
 
 func (h *Handler) GetAddress(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	addr, err := h.db.GetAddressByID(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+	id := parseID(c)
+	if id == 0 {
 		return
 	}
-	c.JSON(http.StatusOK, addr)
+
+	addr, err := h.db.GetAddressByID(id)
+	if err != nil {
+		respondError(c, http.StatusNotFound, "NOT_FOUND", "address not found")
+		return
+	}
+	respondOK(c, addr)
 }
 
 func (h *Handler) UpdateAddress(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id := parseID(c)
+	if id == 0 {
+		return
+	}
+
 	var req struct {
 		Label string `json:"label"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "invalid request body")
 		return
 	}
 
 	if err := h.db.UpdateAddress(id, req.Label); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update address")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) DeleteAddress(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err := h.db.DeleteAddress(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	id := parseID(c)
+	if id == 0 {
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+
+	if err := h.db.DeleteAddress(id); err != nil {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to delete address")
+		return
+	}
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) RefreshAddressBalance(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id := parseID(c)
+	if id == 0 {
+		return
+	}
+
 	addr, err := h.db.GetAddressByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		respondError(c, http.StatusNotFound, "NOT_FOUND", "address not found")
 		return
 	}
 
 	balance, err := h.solana.GetBalance(c.Request.Context(), addr.Address)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadGateway, "RPC_ERROR", "failed to fetch balance from Solana RPC")
 		return
 	}
 
 	h.db.UpdateAddressBalance(id, balance)
 	addr.Balance = balance
 
-	c.JSON(http.StatusOK, addr)
+	respondOK(c, addr)
 }
 
 func (h *Handler) GetRules(c *gin.Context) {
 	rules, err := h.db.GetAllRules()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch rules")
 		return
 	}
-	c.JSON(http.StatusOK, rules)
+	respondOK(c, rules)
 }
 
 func (h *Handler) CreateRule(c *gin.Context) {
@@ -143,64 +194,101 @@ func (h *Handler) CreateRule(c *gin.Context) {
 		Threshold float64 `json:"threshold" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "address_id, rule_type, and threshold are required")
+		return
+	}
+
+	if req.Threshold < 0 {
+		respondError(c, http.StatusBadRequest, "INVALID_THRESHOLD", "threshold must be >= 0")
+		return
+	}
+
+	if req.RuleType != "balance_change" {
+		respondError(c, http.StatusBadRequest, "INVALID_RULE_TYPE", "rule_type must be 'balance_change'")
 		return
 	}
 
 	rule, err := h.db.CreateRule(req.AddressID, req.RuleType, req.Threshold)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create rule")
 		return
 	}
 	c.JSON(http.StatusCreated, rule)
 }
 
 func (h *Handler) UpdateRule(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id := parseID(c)
+	if id == 0 {
+		return
+	}
+
 	var req struct {
 		RuleType  string  `json:"rule_type"`
 		Threshold float64 `json:"threshold"`
 		Enabled   bool    `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "invalid request body")
 		return
 	}
 
 	if err := h.db.UpdateRule(id, req.RuleType, req.Threshold, req.Enabled); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update rule")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) DeleteRule(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err := h.db.DeleteRule(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	id := parseID(c)
+	if id == 0 {
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+
+	if err := h.db.DeleteRule(id); err != nil {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to delete rule")
+		return
+	}
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) GetNotifications(c *gin.Context) {
 	notifications, err := h.db.GetAllNotifications()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch notifications")
 		return
 	}
-	c.JSON(http.StatusOK, notifications)
+	respondOK(c, notifications)
 }
 
 func (h *Handler) CreateNotification(c *gin.Context) {
 	var req struct {
-		Name   string                 `json:"name" binding:"required"`
-		Type   string                 `json:"type" binding:"required"`
-		Config map[string]string      `json:"config"`
+		Name   string            `json:"name" binding:"required"`
+		Type   string            `json:"type" binding:"required"`
+		Config map[string]string `json:"config"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "name and type are required")
 		return
+	}
+
+	if req.Type != "telegram" && req.Type != "email" {
+		respondError(c, http.StatusBadRequest, "INVALID_TYPE", "type must be 'telegram' or 'email'")
+		return
+	}
+
+	if req.Type == "telegram" {
+		if req.Config == nil || req.Config["chat_id"] == "" {
+			respondError(c, http.StatusBadRequest, "MISSING_CONFIG", "chat_id is required for telegram notifications")
+			return
+		}
+	}
+
+	if req.Type == "email" {
+		if req.Config == nil || req.Config["email"] == "" {
+			respondError(c, http.StatusBadRequest, "MISSING_CONFIG", "email is required for email notifications")
+			return
+		}
 	}
 
 	configJSON := ""
@@ -212,14 +300,18 @@ func (h *Handler) CreateNotification(c *gin.Context) {
 
 	notif, err := h.db.CreateNotification(req.Name, req.Type, configJSON)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create notification channel")
 		return
 	}
 	c.JSON(http.StatusCreated, notif)
 }
 
 func (h *Handler) UpdateNotification(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id := parseID(c)
+	if id == 0 {
+		return
+	}
+
 	var req struct {
 		Name    string            `json:"name"`
 		Type    string            `json:"type"`
@@ -227,7 +319,7 @@ func (h *Handler) UpdateNotification(c *gin.Context) {
 		Enabled bool              `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST", "invalid request body")
 		return
 	}
 
@@ -239,26 +331,34 @@ func (h *Handler) UpdateNotification(c *gin.Context) {
 	}
 
 	if err := h.db.UpdateNotification(id, req.Name, req.Type, configJSON, req.Enabled); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to update notification channel")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) DeleteNotification(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err := h.db.DeleteNotification(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	id := parseID(c)
+	if id == 0 {
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+
+	if err := h.db.DeleteNotification(id); err != nil {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to delete notification channel")
+		return
+	}
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) TestNotification(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id := parseID(c)
+	if id == 0 {
+		return
+	}
+
 	notif, err := h.db.GetNotificationByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		respondError(c, http.StatusNotFound, "NOT_FOUND", "notification channel not found")
 		return
 	}
 
@@ -276,35 +376,40 @@ func (h *Handler) TestNotification(c *gin.Context) {
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadGateway, "SEND_FAILED", "failed to send test notification: "+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	respondOK(c, gin.H{"success": true})
 }
 
 func (h *Handler) GetAlerts(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	alerts, err := h.db.GetAllAlerts(limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if limit < 1 || limit > 200 {
+		respondError(c, http.StatusBadRequest, "INVALID_LIMIT", "limit must be between 1 and 200")
 		return
 	}
-	c.JSON(http.StatusOK, alerts)
+
+	alerts, err := h.db.GetAllAlerts(limit, offset)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch alerts")
+		return
+	}
+	respondOK(c, alerts)
 }
 
 func (h *Handler) GetAlertStats(c *gin.Context) {
 	stats, err := h.db.GetAlertStats()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch alert stats")
 		return
 	}
-	c.JSON(http.StatusOK, stats)
+	respondOK(c, stats)
 }
 
 func (h *Handler) Health(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+	respondOK(c, gin.H{
 		"status":         "ok",
 		"monitor_running": true,
 	})
@@ -313,18 +418,18 @@ func (h *Handler) Health(c *gin.Context) {
 func (h *Handler) GetStats(c *gin.Context) {
 	stats, err := h.db.GetStats()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to fetch stats")
 		return
 	}
 
 	alertStats, _ := h.db.GetAlertStats()
 
-	c.JSON(http.StatusOK, gin.H{
-		"total_addresses":    stats["addresses"],
-		"total_rules":        stats["rules"],
+	respondOK(c, gin.H{
+		"total_addresses":     stats["addresses"],
+		"total_rules":         stats["rules"],
 		"total_notifications": stats["notifications"],
-		"total_alerts":       alertStats["total"],
-		"today_alerts":       alertStats["today"],
-		"monitor_running":    true,
+		"total_alerts":        alertStats["total"],
+		"today_alerts":        alertStats["today"],
+		"monitor_running":     true,
 	})
 }

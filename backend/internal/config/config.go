@@ -12,7 +12,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port string
+	Port   string
+	APIKey string
 }
 
 type DatabaseConfig struct {
@@ -41,7 +42,8 @@ type SMTPConfig struct {
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Port: getEnv("PORT", "8080"),
+			Port:   getEnv("PORT", "8080"),
+			APIKey: getEnv("API_KEY", ""),
 		},
 		Database: DatabaseConfig{
 			Path: getEnv("DATABASE_PATH", "./data/monitor.db"),
