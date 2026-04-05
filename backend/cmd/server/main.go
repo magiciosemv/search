@@ -61,15 +61,18 @@ func main() {
 		cfg.Notification.ProxyURL,
 	)
 
+	// Initialize event bus for SSE
+	eventBus := services.NewEventBus()
+
 	// Initialize monitor service
-	monitor := services.NewMonitorService(db, solana, notifier)
+	monitor := services.NewMonitorService(db, solana, notifier, eventBus)
 
 	// Start monitor in background
 	ctx, cancel := context.WithCancel(context.Background())
 	go monitor.Start(ctx)
 
 	// Initialize handlers
-	h := handlers.NewHandler(db, solana, monitor, notifier)
+	h := handlers.NewHandler(db, solana, monitor, notifier, eventBus)
 
 	// Setup router
 	router := setupRouter(h, cfg.Server.APIKey)
@@ -144,6 +147,9 @@ func setupRouter(h *handlers.Handler, apiKey string) *gin.Engine {
 
 		// Stats
 		api.GET("/stats", h.GetStats)
+
+		// SSE (Server-Sent Events) for real-time updates
+		api.GET("/events", h.StreamEvents)
 	}
 
 	return router

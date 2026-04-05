@@ -94,12 +94,26 @@
 </template>
 
 <script setup>
-import { useFetch } from '../utils/api.js'
+import { onMounted, onUnmounted } from 'vue'
+import { useFetch, useSSE } from '../utils/api.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import EmptyState from '../components/EmptyState.vue'
 
-const { data: stats } = useFetch('/api/stats', {})
-const { data: recentAlerts } = useFetch('/api/alerts?limit=5', [])
+const { data: stats, refetch: refetchStats } = useFetch('/api/stats', {})
+const { data: recentAlerts, refetch: refetchAlerts } = useFetch('/api/alerts?limit=5', [])
+
+onMounted(() => {
+  const { disconnect } = useSSE('/api/events', (type, data) => {
+    if (type === 'balance_update') {
+      refetchStats()
+    }
+    if (type === 'new_alert') {
+      refetchAlerts()
+      refetchStats()
+    }
+  })
+  onUnmounted(disconnect)
+})
 </script>
 
 <style scoped>

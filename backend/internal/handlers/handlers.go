@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -16,14 +18,16 @@ type Handler struct {
 	solana   *services.SolanaService
 	monitor  *services.MonitorService
 	notifier *services.NotificationService
+	bus      *services.EventBus
 }
 
-func NewHandler(db *models.DB, solana *services.SolanaService, monitor *services.MonitorService, notifier *services.NotificationService) *Handler {
+func NewHandler(db *models.DB, solana *services.SolanaService, monitor *services.MonitorService, notifier *services.NotificationService, bus *services.EventBus) *Handler {
 	return &Handler{
 		db:       db,
 		solana:   solana,
 		monitor:  monitor,
 		notifier: notifier,
+		bus:      bus,
 	}
 }
 
@@ -432,4 +436,45 @@ func (h *Handler) GetStats(c *gin.Context) {
 		"today_alerts":        alertStats["today"],
 		"monitor_running":     true,
 	})
+}
+
+// StreamEvents is a SSE endpoint that pushes real-time balance updates and alerts.
+func (h *Handler) StreamEvents(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	ch := h.bus.Subscribe()
+	defer h.bus.Unsubscribe(ch)
+
+	ctx := c.Request.Context()
+
+	// Send initial connection event
+	c.Writer.Write([]byte("event: connected\ndata: {}\n\n"))
+	c.Writer.Flush()
+
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			data, err := json.Marshal(event.Data)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", event.Type, data)
+			c.Writer.Flush()
+		case <-ticker.C:
+			// Keepalive
+			c.Writer.Write([]byte(": keepalive\n\n"))
+			c.Writer.Flush()
+		}
+	}
 }

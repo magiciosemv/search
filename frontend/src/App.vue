@@ -1,6 +1,18 @@
 <template>
   <div class="app-layout">
-    <aside class="sidebar">
+    <!-- Mobile hamburger -->
+    <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Toggle menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <!-- Backdrop for mobile -->
+    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
+
+    <aside class="sidebar" :class="{ open: sidebarOpen }">
       <div class="sidebar-brand">
         <div class="brand-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -16,7 +28,8 @@
       <nav class="sidebar-nav">
         <router-link v-for="(item, i) in navItems" :key="item.path" :to="item.path"
           class="nav-item" :class="{ active: $route.path === item.path }"
-          :style="{ animationDelay: i * 60 + 'ms' }">
+          :style="{ animationDelay: i * 60 + 'ms' }"
+          @click="sidebarOpen = false">
           <div class="nav-icon" v-html="item.icon"></div>
           <span class="nav-label">{{ item.name }}</span>
           <div v-if="$route.path === item.path" class="nav-indicator"></div>
@@ -42,6 +55,10 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const sidebarOpen = ref(false)
+
 const navItems = [
   {
     path: '/', name: 'Dashboard',
@@ -67,6 +84,28 @@ const navItems = [
   display: flex;
   height: 100vh;
   overflow: hidden;
+}
+
+/* Mobile toggle */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--cyan-bright);
+  cursor: pointer;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .sidebar {
@@ -214,4 +253,36 @@ const navItems = [
 /* Page transition */
 .page-enter-active { animation: fadeInUp 0.35s var(--ease-out); }
 .page-leave-active { animation: fadeIn 0.15s ease reverse; }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    padding-top: 64px;
+  }
+}
 </style>

@@ -78,15 +78,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { apiPost, apiPut, apiDelete, useFetch, useSSE } from '../utils/api.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
-const { data: addresses } = useFetch('/api/addresses', [])
+const { data: addresses, refetch } = useFetch('/api/addresses', [])
 const showAddModal = ref(false)
 const newAddress = ref({ address: '', label: '', threshold: 1 })
+
+onMounted(() => {
+  const { disconnect } = useSSE('/api/events', (type, data) => {
+    if (type === 'balance_update') {
+      refetch()
+    }
+  })
+  onUnmounted(disconnect)
+})
 
 const addAddress = async () => {
   try {

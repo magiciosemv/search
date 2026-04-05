@@ -2,9 +2,12 @@ package services
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/mail"
 	"net/smtp"
 	"net/url"
 	"time"
@@ -92,21 +95,76 @@ func (n *NotificationService) SendEmail(to, subject, body string) error {
 		return fmt.Errorf("SMTP not configured")
 	}
 
-	msg := fmt.Sprintf("From: %s\r\n", n.smtpConfig.From) +
-		fmt.Sprintf("To: %s\r\n", to) +
+	fromAddr, err := mail.ParseAddress(n.smtpConfig.From)
+	if err != nil {
+		return fmt.Errorf("invalid from address: %w", err)
+	}
+
+	toAddr, err := mail.ParseAddress(to)
+	if err != nil {
+		return fmt.Errorf("invalid to address: %w", err)
+	}
+
+	msg := fmt.Sprintf("From: %s\r\n", fromAddr.String()) +
+		fmt.Sprintf("To: %s\r\n", toAddr.String()) +
 		fmt.Sprintf("Subject: %s\r\n", subject) +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=\"utf-8\"\r\n" +
+		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
 		"\r\n" +
 		body
 
+	addr := n.smtpConfig.Host + ":" + n.smtpConfig.Port
+
+	// Connect with TLS (STARTTLS)
+	tlsConfig := &tls.Config{
+		ServerName: n.smtpConfig.Host,
+	}
+
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to SMTP server: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, n.smtpConfig.Host)
+	if err != nil {
+		conn.Close()
+		return fmt.Errorf("failed to create SMTP client: %w", err)
+	}
+	defer client.Close()
+
+	// Upgrade to TLS if server supports it
+	if err := client.StartTLS(tlsConfig); err != nil {
+		return fmt.Errorf("STARTTLS failed: %w", err)
+	}
+
 	auth := smtp.PlainAuth("", n.smtpConfig.Username, n.smtpConfig.Password, n.smtpConfig.Host)
-	err := smtp.SendMail(
-		n.smtpConfig.Host+":"+n.smtpConfig.Port,
-		auth,
-		n.smtpConfig.From,
-		[]string{to},
-		[]byte(msg),
-	)
-	return err
+	if err := client.Auth(auth); err != nil {
+		return fmt.Errorf("SMTP auth failed: %w", err)
+	}
+
+	if err := client.Mail(fromAddr.Address); err != nil {
+		return fmt.Errorf("MAIL FROM failed: %w", err)
+	}
+
+	if err := client.Rcpt(toAddr.Address); err != nil {
+		return fmt.Errorf("RCPT TO failed: %w", err)
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("DATA failed: %w", err)
+	}
+
+	if _, err := w.Write([]byte(msg)); err != nil {
+		return fmt.Errorf("failed to write email body: %w", err)
+	}
+
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("failed to close email body: %w", err)
+	}
+
+	return client.Quit()
 }
 
 func (n *NotificationService) SendAlert(msg AlertMessage) error {

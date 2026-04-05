@@ -70,3 +70,57 @@ export function useFetch(url, defaultValue = []) {
 
   return { data, loading, refetch: execute }
 }
+
+// useSSE subscribes to Server-Sent Events and calls eventHandler(eventType, data).
+// Returns a reconnect function.
+export function useSSE(url, eventHandler) {
+  let source = null
+  let reconnectTimer = null
+  let active = true
+
+  function connect() {
+    if (!active) return
+
+    source = new EventSource(url)
+
+    source.addEventListener('connected', () => {
+      console.log('SSE connected')
+    })
+
+    source.addEventListener('balance_update', (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        eventHandler('balance_update', data)
+      } catch (err) {
+        console.error('SSE parse error:', err)
+      }
+    })
+
+    source.addEventListener('new_alert', (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        eventHandler('new_alert', data)
+      } catch (err) {
+        console.error('SSE parse error:', err)
+      }
+    })
+
+    source.onerror = () => {
+      source.close()
+      source = null
+      if (active) {
+        reconnectTimer = setTimeout(connect, 3000)
+      }
+    }
+  }
+
+  connect()
+
+  function disconnect() {
+    active = false
+    if (reconnectTimer) clearTimeout(reconnectTimer)
+    if (source) source.close()
+  }
+
+  return { disconnect }
+}

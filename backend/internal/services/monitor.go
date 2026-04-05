@@ -13,13 +13,15 @@ type MonitorService struct {
 	db       *models.DB
 	solana   *SolanaService
 	notifier *NotificationService
+	bus      *EventBus
 }
 
-func NewMonitorService(db *models.DB, solana *SolanaService, notifier *NotificationService) *MonitorService {
+func NewMonitorService(db *models.DB, solana *SolanaService, notifier *NotificationService, bus *EventBus) *MonitorService {
 	return &MonitorService{
 		db:       db,
 		solana:   solana,
 		notifier: notifier,
+		bus:      bus,
 	}
 }
 
@@ -69,6 +71,15 @@ func (m *MonitorService) checkAddress(ctx context.Context, addr models.Address) 
 	// Update stored balance
 	if err := m.db.UpdateAddressBalance(addr.ID, balance); err != nil {
 		log.Printf("Failed to update balance for %s: %v", addr.Address, err)
+	}
+
+	// Publish balance update event
+	if m.bus != nil {
+		m.bus.Publish("balance_update", map[string]interface{}{
+			"id":      addr.ID,
+			"address": addr.Address,
+			"balance": balance,
+		})
 	}
 
 	// Get rules for this address
@@ -153,6 +164,18 @@ func (m *MonitorService) triggerAlert(ctx context.Context, addr models.Address, 
 
 	if err := m.notifier.SendAlert(msg); err != nil {
 		log.Printf("Failed to send notification: %v", err)
+	}
+
+	// Publish alert event
+	if m.bus != nil {
+		m.bus.Publish("new_alert", map[string]interface{}{
+			"address":    msg.Address,
+			"label":      msg.Label,
+			"alert_type": msg.AlertType,
+			"old_value":  msg.OldValue,
+			"new_value":  msg.NewValue,
+			"time":       msg.Time.Format(time.RFC3339),
+		})
 	}
 }
 
