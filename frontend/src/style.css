@@ -168,5 +168,51 @@ input:focus, select:focus {
   outline-offset: 2px;
 }
 
+/* Component classes */
+.card {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+.dark .card { background-color: #1e293b; }
+
+.btn-primary {
+  background-color: #7c3aed;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+}
+.btn-primary:hover { background-color: #6d28d9; }
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+}
+.dark .btn-secondary { background-color: #334155; color: #d1d5db; }
+.btn-secondary:hover { background-color: #e5e7eb; }
+.dark .btn-secondary:hover { background-color: #475569; }
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.badge-success { background-color: #dcfce7; color: #166534; }
+.dark .badge-success { background-color: #064e3b; color: #6ee7b7; }
+.badge-muted { background-color: #f3f4f6; color: #6b7280; }
+.dark .badge-muted { background-color: #334155; color: #9ca3af; }
+.badge-type { background-color: #f3e8ff; color: #5b21b6; }
+.dark .badge-type { background-color: #581c87; color: #c4b5fd; }
+
 /* Router link styling */
 a { text-decoration: none; color: inherit; }
