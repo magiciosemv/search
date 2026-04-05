@@ -308,6 +308,7 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: fixed;
 }
 
 .data-table thead th {
@@ -361,7 +362,8 @@ body {
 /* ---- Layout helpers ---- */
 .page-container {
   padding: 32px;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 100%;
   animation: fadeInUp 0.4s var(--ease-out) both;
 }
 
