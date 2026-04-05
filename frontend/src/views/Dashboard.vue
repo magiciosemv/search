@@ -8,7 +8,7 @@
     </div>
 
     <div class="stats-grid stagger">
-      <div class="stat-card card" style="animation: fadeInUp 0.5s var(--ease-out) both; animation-delay: 0ms">
+      <div class="stat-card card animate-fade-up">
         <div class="stat-header">
           <span class="stat-label">Total Wallets</span>
           <div class="stat-icon wallet-icon">
@@ -18,7 +18,7 @@
         <div class="stat-value">{{ stats.total_addresses || 0 }}</div>
       </div>
 
-      <div class="stat-card card" style="animation: fadeInUp 0.5s var(--ease-out) both; animation-delay: 60ms">
+      <div class="stat-card card animate-fade-up">
         <div class="stat-header">
           <span class="stat-label">Channels</span>
           <div class="stat-icon bell-icon">
@@ -28,7 +28,7 @@
         <div class="stat-value">{{ stats.total_notifications || 0 }}</div>
       </div>
 
-      <div class="stat-card card" style="animation: fadeInUp 0.5s var(--ease-out) both; animation-delay: 120ms">
+      <div class="stat-card card animate-fade-up">
         <div class="stat-header">
           <span class="stat-label">Total Alerts</span>
           <div class="stat-icon alert-icon">
@@ -38,7 +38,7 @@
         <div class="stat-value">{{ stats.total_alerts || 0 }}</div>
       </div>
 
-      <div class="stat-card card" style="animation: fadeInUp 0.5s var(--ease-out) both; animation-delay: 180ms">
+      <div class="stat-card card animate-fade-up">
         <div class="stat-header">
           <span class="stat-label">Today</span>
           <div class="stat-icon today-icon">

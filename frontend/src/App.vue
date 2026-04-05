@@ -148,6 +148,8 @@ const navItems = [
   position: relative;
   animation: slideIn 0.4s var(--ease-out) both;
   text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {

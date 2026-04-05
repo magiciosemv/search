@@ -105,9 +105,8 @@ defineEmits(['update:modelValue', 'submit'])
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 16px 24px;
+  padding: 20px 24px;
   border-top: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
 }
 
 .modal-enter-active .modal-panel { animation: modalIn 0.3s var(--ease-out); }

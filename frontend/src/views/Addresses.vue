@@ -12,10 +12,8 @@
     </div>
 
     <div class="wallet-grid stagger">
-      <div v-for="(addr, i) in addresses" :key="addr.id"
-        class="wallet-card card"
-        style="animation: fadeInUp 0.5s var(--ease-out) both"
-        :style="{ animationDelay: i * 80 + 'ms' }">
+      <div v-for="addr in addresses" :key="addr.id"
+        class="wallet-card card animate-fade-up">
         <div class="wallet-card-top">
           <div class="wallet-identity">
             <div class="wallet-avatar">{{ (addr.label || 'W')[0].toUpperCase() }}</div>
@@ -245,11 +243,4 @@ const saveThreshold = async (addr) => {
   font-family: var(--font-mono);
 }
 
-.field-label {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
 </style>

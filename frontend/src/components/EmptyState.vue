@@ -30,8 +30,11 @@ defineProps({
 
 .empty-icon {
   color: var(--text-muted);
-  opacity: 0.4;
+  opacity: 0.3;
   margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-default);
 }
 
 .empty-title {

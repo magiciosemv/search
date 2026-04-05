@@ -12,11 +12,9 @@
     </div>
 
     <div class="notif-grid stagger">
-      <div v-for="(notif, i) in notifications" :key="notif.id"
-        class="notif-card card"
-        :class="notif.type"
-        style="animation: fadeInUp 0.5s var(--ease-out) both"
-        :style="{ animationDelay: i * 80 + 'ms' }">
+      <div v-for="notif in notifications" :key="notif.id"
+        class="notif-card card animate-fade-up"
+        :class="notif.type">
         <div class="notif-top">
           <div class="notif-identity">
             <div class="notif-type-icon" :class="notif.type">
@@ -312,6 +310,7 @@ const deleteNotification = async (id) => {
 }
 
 .type-option:hover {
+  cursor: pointer;
   border-color: var(--border-default);
   color: var(--text-secondary);
 }
@@ -322,11 +321,4 @@ const deleteNotification = async (id) => {
   color: var(--cyan-bright);
 }
 
-.field-label {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
 </style>

@@ -90,22 +90,13 @@ body {
   50% { opacity: 0.7; box-shadow: 0 0 3px var(--cyan-base); }
 }
 
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes borderGlow {
-  0%, 100% { border-color: var(--border-default); }
-  50% { border-color: var(--border-bright); }
-}
-
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 .animate-fade-in { animation: fadeIn 0.4s var(--ease-out) both; }
+.animate-fade-up { animation: fadeInUp 0.5s var(--ease-out) both; }
 .animate-fade-up { animation: fadeInUp 0.5s var(--ease-out) both; }
 .animate-slide-in { animation: slideIn 0.4s var(--ease-out) both; }
 
@@ -150,10 +141,23 @@ body {
 
 .card:hover::before { opacity: 0.6; }
 
+/* Interactive card variant (clickable) */
+.card-interactive {
+  cursor: pointer;
+}
+
 /* Stat card variant */
 .stat-card {
   background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+  cursor: default;
 }
+
+.stat-card:hover {
+  border-color: var(--border-default);
+  box-shadow: none;
+}
+
+.stat-card:hover::before { opacity: 0; }
 
 /* ---- Badge System ---- */
 .badge {
@@ -223,6 +227,7 @@ body {
   background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
   opacity: 0;
   transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .btn:hover::after { opacity: 1; }
@@ -364,7 +369,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .page-title {
@@ -386,4 +391,32 @@ a { text-decoration: none; color: inherit; }
 ::selection {
   background: rgba(6, 182, 212, 0.3);
   color: #fff;
+}
+
+/* ---- Accessibility: Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Focus States ---- */
+.btn:focus-visible,
+.nav-item:focus-visible,
+.toggle-btn:focus-visible,
+.input-field:focus-visible,
+.type-option:focus-visible {
+  outline: 2px solid var(--cyan-base);
+  outline-offset: 2px;
+}
+
+/* ---- Shared Form Label ---- */
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
 }
