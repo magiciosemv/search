@@ -64,8 +64,8 @@
         </select>
       </div>
       <div>
-        <label class="field-label">{{ t('wallets.solanaAddress') }}</label>
-        <input v-model="newAddress.address" type="text" placeholder="Enter wallet address..." class="input-field input-mono" />
+        <label class="field-label">{{ addressLabel }}</label>
+        <input v-model="newAddress.address" type="text" :placeholder="addressPlaceholder" class="input-field input-mono" />
       </div>
       <div>
         <label class="field-label">{{ t('wallets.label') }}</label>
@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiPost, apiDelete, useFetch, useSSE } from '../utils/api.js'
 import { useToast } from '../utils/toast.js'
 import { useConfirm } from '../utils/confirm.js'
@@ -103,6 +103,21 @@ const chainSymbols = {
 }
 
 const getChainSymbol = (chain) => chainSymbols[chain] || chain?.toUpperCase() || 'SOL'
+
+const chainPlaceholders = {
+  solana: { label: 'Solana Address', placeholder: 'e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU' },
+  ethereum: { label: 'Ethereum Address', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+  bitcoin: { label: 'Bitcoin Address', placeholder: 'e.g. bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' },
+  usdt_erc20: { label: 'USDT Wallet Address (ERC-20)', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+  usdc_erc20: { label: 'USDC Wallet Address (ERC-20)', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+  usdt_trc20: { label: 'USDT Wallet Address (TRC-20)', placeholder: 'e.g. TNPeeaaFBmJKcy9S3Qsf48mFyv7aaYfBee' },
+  bsc: { label: 'BNB Chain Address', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+  polygon: { label: 'Polygon Address', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+  arbitrum: { label: 'Arbitrum Address', placeholder: 'e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+}
+
+const addressLabel = computed(() => chainPlaceholders[newAddress.value.chain]?.label || 'Wallet Address')
+const addressPlaceholder = computed(() => chainPlaceholders[newAddress.value.chain]?.placeholder || 'Enter wallet address...')
 
 onMounted(() => {
   const { disconnect } = useSSE('/api/events', (type) => {

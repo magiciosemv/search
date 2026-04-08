@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -59,25 +58,13 @@ type AccountData struct {
 }
 
 func NewSolanaService(rpcURL string, proxyURL string) *SolanaService {
-	var client *http.Client
-	if proxyURL != "" {
-		proxyURLParsed, err := url.Parse(proxyURL)
-		if err == nil {
-			client = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{Proxy: http.ProxyURL(proxyURLParsed)},
-			}
-		} else {
-			client = &http.Client{Timeout: 30 * time.Second}
-		}
-	} else {
-		client = &http.Client{Timeout: 30 * time.Second}
-	}
+	// Solana RPC (Helius) works better without proxy
+	client := &http.Client{Timeout: 30 * time.Second}
 
 	return &SolanaService{
-		rpcURL:  rpcURL,
+		rpcURL:   rpcURL,
 		proxyURL: proxyURL,
-		client:  client,
+		client:   client,
 	}
 }
 
