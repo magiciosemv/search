@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -65,18 +64,8 @@ var moralisChainIDs = map[string]string{
 }
 
 func NewMoralisProvider(apiKey string, proxyURL string, solanaRPC *SolanaService) *MoralisProvider {
-	var client *http.Client
-	if proxyURL != "" {
-		if parsed, err := url.Parse(proxyURL); err == nil {
-			client = &http.Client{
-				Timeout:   30 * time.Second,
-				Transport: &http.Transport{Proxy: http.ProxyURL(parsed)},
-			}
-		}
-	}
-	if client == nil {
-		client = &http.Client{Timeout: 30 * time.Second}
-	}
+	// Moralis API is accessed directly (no proxy needed for external APIs)
+	client := &http.Client{Timeout: 30 * time.Second}
 
 	return &MoralisProvider{
 		apiKey:    apiKey,
@@ -102,13 +91,50 @@ func (m *MoralisProvider) GetBalance(ctx context.Context, address string, chain 
 }
 
 func (m *MoralisProvider) getMoralisBalance(ctx context.Context, address string, chain string, info ChainInfo) (float64, error) {
+	// Bitcoin uses Blockstream API (free, no key needed)
+	if chain == "bitcoin" {
+		return m.getBitcoinBalance(ctx, address)
+	}
+
 	// For token chains (USDT/USDC), use token balance endpoint
 	if chain == "usdt_erc20" || chain == "usdc_erc20" || chain == "usdt_trc20" {
 		return m.getMoralisTokenBalance(ctx, address, chain)
 	}
 
-	// For native chains, use native balance endpoint
+	// For native EVM chains, use Moralis native balance endpoint
 	return m.getMoralisNativeBalance(ctx, address, chain, info)
+}
+
+func (m *MoralisProvider) getBitcoinBalance(ctx context.Context, address string) (float64, error) {
+	apiURL := fmt.Sprintf("https://blockstream.info/api/address/%s", address)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := m.client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("Blockstream API error: HTTP %d", resp.StatusCode)
+	}
+
+	var result struct {
+		ChainStats struct {
+			FundedTxoSum int64 `json:"funded_txo_sum"`
+			SpentTxoSum  int64 `json:"spent_txo_sum"`
+		} `json:"chain_stats"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0, err
+	}
+
+	balanceSats := result.ChainStats.FundedTxoSum - result.ChainStats.SpentTxoSum
+	return float64(balanceSats) / 100000000.0, nil // satoshi to BTC
 }
 
 func (m *MoralisProvider) getMoralisNativeBalance(ctx context.Context, address string, chain string, info ChainInfo) (float64, error) {
