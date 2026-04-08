@@ -46,8 +46,8 @@
   --glass-blur: 16px;
 
   /* Typography — Exo 2 + JetBrains Mono */
-  --font-sans: 'Exo 2', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
   /* Layout */
   --sidebar-width: 220px;
@@ -69,6 +69,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
 }
 
