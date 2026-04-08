@@ -150,6 +150,9 @@ func setupRouter(h *handlers.Handler, apiKey string) *gin.Engine {
 
 		// SSE (Server-Sent Events) for real-time updates
 		api.GET("/events", h.StreamEvents)
+
+		// Backup
+		api.GET("/backup", h.BackupDatabase)
 	}
 
 	return router

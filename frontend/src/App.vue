@@ -23,9 +23,18 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-status">
-          <span class="status-dot"></span>
-          <span class="status-text">{{ monitorRunning ? 'Monitor Active' : 'Offline' }}</span>
+        <div class="footer-controls">
+          <button class="theme-toggle" @click="toggleTheme" :title="theme === 'dark' ? 'Switch to light' : 'Switch to dark'">
+            <svg v-if="theme === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </button>
+          <button class="lang-toggle" @click="setLocale(locale === 'en' ? 'zh' : 'en')" :title="locale === 'en' ? '切换中文' : 'Switch to English'">
+            <span class="lang-label font-mono">{{ locale === 'en' ? 'EN' : '中' }}</span>
+          </button>
+          <div class="sidebar-status">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ monitorRunning ? 'Monitor Active' : 'Offline' }}</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -63,6 +72,7 @@
     </div>
     <ToastContainer />
     <ConfirmDialog />
+    <OnboardingModal v-model="showOnboarding" />
   </div>
 </template>
 
@@ -71,6 +81,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ToastContainer from './components/ToastContainer.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import { useTheme } from './utils/theme.js'
+import { useI18n } from './utils/i18n.js'
+import OnboardingModal from './components/OnboardingModal.vue'
+const { theme, toggleTheme } = useTheme()
+const { locale, setLocale, t } = useI18n()
+const showOnboarding = ref(!localStorage.getItem('onboarded'))
 
 const route = useRoute()
 const sidebarOpen = ref(false)
@@ -93,10 +109,14 @@ const navItems = [
   {
     path: '/alerts', name: 'Alerts',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+  },
+  {
+    path: '/rules', name: 'Rules',
+    icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'
   }
 ]
 
-const pageNames = { '/': 'Dashboard', '/addresses': 'Wallets', '/notifications': 'Channels', '/alerts': 'Alerts' }
+const pageNames = { '/': 'Dashboard', '/addresses': 'Wallets', '/notifications': 'Channels', '/alerts': 'Alerts', '/rules': 'Rules' }
 const currentPage = computed(() => pageNames[route.path] || '')
 
 let timer
@@ -237,13 +257,46 @@ onUnmounted(() => clearInterval(timer))
   border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
-
+.footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.theme-toggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+.lang-toggle {
+  display: flex; align-items: center; justify-content: center;
+  height: 30px; padding: 0 8px; border-radius: 8px;
+  border: 1px solid var(--border-subtle); background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.lang-toggle:hover {
+  color: var(--text-primary); background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+.lang-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.04em; }
 .sidebar-status {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .status-text {
   font-family: var(--font-mono);
   font-size: 0.625rem;

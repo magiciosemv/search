@@ -51,6 +51,7 @@ type Alert struct {
 
 type DB struct {
 	*sql.DB
+	path string
 }
 
 func NewDB(path string) (*DB, error) {
@@ -63,7 +64,11 @@ func NewDB(path string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{db}, nil
+	return &DB{db, path}, nil
+}
+
+func (db *DB) DBPath() string {
+	return db.path
 }
 
 func (db *DB) InitSchema() error {

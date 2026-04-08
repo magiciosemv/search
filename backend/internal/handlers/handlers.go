@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -477,4 +478,29 @@ func (h *Handler) StreamEvents(c *gin.Context) {
 			c.Writer.Flush()
 		}
 	}
+}
+
+func (h *Handler) BackupDatabase(c *gin.Context) {
+	dbPath := h.db.DBPath()
+	if dbPath == "" {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "database path not available")
+		return
+	}
+
+	backupPath := dbPath + ".backup.tmp"
+	_, err := h.db.Exec(fmt.Sprintf("VACUUM INTO '%s'", backupPath))
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "backup failed")
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename=solana-monitor-backup.db")
+	c.Header("Content-Type", "application/octet-stream")
+	c.File(backupPath)
+
+	// Clean up temp file after sending
+	go func() {
+		time.Sleep(2 * time.Second)
+		os.Remove(backupPath)
+	}()
 }

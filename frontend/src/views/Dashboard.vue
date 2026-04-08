@@ -18,6 +18,10 @@
         <span class="monitor-interval font-mono">every 30s</span>
       </div>
       <span class="badge badge-success">{{ monitorRunning ? 'Running' : 'Stopped' }}</span>
+      <button class="btn btn-ghost btn-sm" @click="backupDB">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Backup
+      </button>
     </div>
 
     <div class="glass alerts-section animate-fade-up" style="animation-delay: 260ms">
@@ -46,12 +50,30 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useFetch, useSSE } from '../utils/api.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
+import { useToast } from '../utils/toast.js'
 import EmptyState from '../components/EmptyState.vue'
+
+const toast = useToast()
 
 const { data: stats, refetch: refetchStats } = useFetch('/api/stats', {})
 const { data: recentAlerts, refetch: refetchAlerts } = useFetch('/api/alerts?limit=5', [])
 
 const monitorRunning = true
+
+const backupDB = async () => {
+  try {
+    const res = await fetch('/api/backup', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } })
+    if (!res.ok) throw new Error('Backup failed')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `solana-monitor-backup-${new Date().toISOString().slice(0, 10)}.db`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Database backup downloaded')
+  } catch (e) { toast.error(e.message) }
+}
 
 const statCards = [
   {
