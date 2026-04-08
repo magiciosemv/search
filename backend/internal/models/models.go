@@ -11,6 +11,7 @@ import (
 type Address struct {
 	ID        int64     `json:"id"`
 	Address   string    `json:"address"`
+	Chain     string    `json:"chain"`
 	Label     string    `json:"label"`
 	Balance   float64   `json:"balance,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
@@ -75,11 +76,13 @@ func (db *DB) InitSchema() error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS addresses (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		address VARCHAR(44) NOT NULL UNIQUE,
+		address VARCHAR(128) NOT NULL,
+		chain VARCHAR(20) NOT NULL DEFAULT 'solana',
 		label VARCHAR(255),
 		balance REAL DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(address, chain)
 	);
 
 	CREATE TABLE IF NOT EXISTS rules (

@@ -20,7 +20,7 @@
             </div>
             <div>
               <div class="rule-type badge badge-blue">{{ rule.rule_type === 'balance_change' ? t('rules.balanceChange') : rule.rule_type }}</div>
-              <div class="rule-wallet text-muted font-mono" v-if="getAddress(rule.address_id)">{{ truncateAddress(getAddress(rule.address_id).address) }}</div>
+              <div class="rule-wallet text-muted font-mono" v-if="getAddress(rule.address_id)">{{ truncateAddress(getAddress(rule.address_id).address) }} <span class="chain-tag">{{ getChainSymbol(getAddress(rule.address_id).chain) }}</span></div>
             </div>
           </div>
           <div class="rule-right">
@@ -84,6 +84,12 @@ const form = ref({ address_id: '', rule_type: 'balance_change', threshold: 1 })
 
 const getAddress = (id) => addresses.value.find(a => a.id === id)
 
+const chainSymbols = {
+  solana: 'SOL', ethereum: 'ETH', bitcoin: 'BTC',
+  usdt_erc20: 'USDT', usdc_erc20: 'USDC', bsc: 'BNB', polygon: 'MATIC', arbitrum: 'ETH'
+}
+const getChainSymbol = (chain) => chainSymbols[chain] || chain?.toUpperCase() || 'SOL'
+
 const editRule = (rule) => {
   editingRule.value = rule
   form.value = { address_id: rule.address_id, rule_type: rule.rule_type, threshold: rule.threshold }
@@ -132,6 +138,7 @@ const deleteRule = async (id) => {
 .rule-right { display: flex; align-items: center; gap: 14px; }
 .rule-threshold { font-size: 1.125rem; font-weight: 700; }
 .rule-actions { display: flex; gap: 6px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+.chain-tag { color: var(--blue-bright); font-size: 0.625rem; margin-left: 4px; }
 
 /* Toggle */
 .toggle-btn { display: flex; align-items: center; background: none; border: none; cursor: pointer; }

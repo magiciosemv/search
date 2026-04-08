@@ -47,6 +47,9 @@ func main() {
 	// Initialize Solana service
 	solana := services.NewSolanaService(cfg.Solana.RPCURL, cfg.Notification.ProxyURL)
 
+	// Initialize multi-chain service
+	chainService := services.NewMoralisProvider(cfg.Moralis.APIKey, cfg.Notification.ProxyURL, solana)
+
 	// Initialize notification service
 	notifier := services.NewNotificationService(
 		db,
@@ -65,14 +68,14 @@ func main() {
 	eventBus := services.NewEventBus()
 
 	// Initialize monitor service
-	monitor := services.NewMonitorService(db, solana, notifier, eventBus)
+	monitor := services.NewMonitorService(db, chainService, notifier, eventBus)
 
 	// Start monitor in background
 	ctx, cancel := context.WithCancel(context.Background())
 	go monitor.Start(ctx)
 
 	// Initialize handlers
-	h := handlers.NewHandler(db, solana, monitor, notifier, eventBus)
+	h := handlers.NewHandler(db, chainService, monitor, notifier, eventBus)
 
 	// Setup router
 	router := setupRouter(h, cfg.Server.APIKey)

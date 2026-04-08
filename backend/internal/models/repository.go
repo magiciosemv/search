@@ -5,7 +5,7 @@ import (
 )
 
 func (db *DB) GetAllAddresses() ([]Address, error) {
-	rows, err := db.Query("SELECT id, address, label, balance, created_at, updated_at FROM addresses ORDER BY created_at DESC")
+	rows, err := db.Query("SELECT id, address, chain, label, balance, created_at, updated_at FROM addresses ORDER BY created_at DESC")
 	if err != nil {
 		return nil, err
 	}
@@ -14,7 +14,7 @@ func (db *DB) GetAllAddresses() ([]Address, error) {
 	var addresses []Address
 	for rows.Next() {
 		var a Address
-		if err := rows.Scan(&a.ID, &a.Address, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.Address, &a.Chain, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt); err != nil {
 			return nil, err
 		}
 		addresses = append(addresses, a)
@@ -24,26 +24,26 @@ func (db *DB) GetAllAddresses() ([]Address, error) {
 
 func (db *DB) GetAddressByID(id int64) (*Address, error) {
 	var a Address
-	err := db.QueryRow("SELECT id, address, label, balance, created_at, updated_at FROM addresses WHERE id = ?", id).
-		Scan(&a.ID, &a.Address, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt)
+	err := db.QueryRow("SELECT id, address, chain, label, balance, created_at, updated_at FROM addresses WHERE id = ?", id).
+		Scan(&a.ID, &a.Address, &a.Chain, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
-func (db *DB) GetAddressByAddress(addr string) (*Address, error) {
+func (db *DB) GetAddressByAddressAndChain(addr string, chain string) (*Address, error) {
 	var a Address
-	err := db.QueryRow("SELECT id, address, label, balance, created_at, updated_at FROM addresses WHERE address = ?", addr).
-		Scan(&a.ID, &a.Address, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt)
+	err := db.QueryRow("SELECT id, address, chain, label, balance, created_at, updated_at FROM addresses WHERE address = ? AND chain = ?", addr, chain).
+		Scan(&a.ID, &a.Address, &a.Chain, &a.Label, &a.Balance, &a.CreatedAt, &a.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &a, nil
 }
 
-func (db *DB) CreateAddress(address, label string) (*Address, error) {
-	result, err := db.Exec("INSERT INTO addresses (address, label) VALUES (?, ?)", address, label)
+func (db *DB) CreateAddress(address, chain, label string) (*Address, error) {
+	result, err := db.Exec("INSERT INTO addresses (address, chain, label) VALUES (?, ?, ?)", address, chain, label)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (db *DB) DeleteNotification(id int64) error {
 func (db *DB) GetAllAlerts(limit, offset int) ([]Alert, error) {
 	rows, err := db.Query(`
 		SELECT a.id, a.address_id, a.rule_id, a.alert_type, a.old_value, a.new_value, a.message, a.created_at,
-		       ad.address, ad.label
+		       ad.address, ad.chain, ad.label
 		FROM alerts a
 		LEFT JOIN addresses ad ON a.address_id = ad.id
 		ORDER BY a.created_at DESC
@@ -195,7 +195,7 @@ func (db *DB) GetAllAlerts(limit, offset int) ([]Alert, error) {
 	for rows.Next() {
 		var al Alert
 		var addr Address
-		if err := rows.Scan(&al.ID, &al.AddressID, &al.RuleID, &al.AlertType, &al.OldValue, &al.NewValue, &al.Message, &al.CreatedAt, &addr.Address, &addr.Label); err != nil {
+		if err := rows.Scan(&al.ID, &al.AddressID, &al.RuleID, &al.AlertType, &al.OldValue, &al.NewValue, &al.Message, &al.CreatedAt, &addr.Address, &addr.Chain, &addr.Label); err != nil {
 			return nil, err
 		}
 		if addr.Address != "" {

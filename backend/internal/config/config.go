@@ -8,7 +8,12 @@ type Config struct {
 	Server       ServerConfig
 	Database     DatabaseConfig
 	Solana       SolanaConfig
+	Moralis      MoralisConfig
 	Notification NotificationConfig
+}
+
+type MoralisConfig struct {
+	APIKey string
 }
 
 type ServerConfig struct {
@@ -51,6 +56,9 @@ func Load() *Config {
 		Solana: SolanaConfig{
 			RPCURL: getEnv("RPC_URL", "https://api.mainnet-beta.solana.com"),
 			APIKey: getEnv("RPC_API_KEY", ""),
+		},
+		Moralis: MoralisConfig{
+			APIKey: getEnv("MORALIS_API_KEY", ""),
 		},
 		Notification: NotificationConfig{
 			TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),

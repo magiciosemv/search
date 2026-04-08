@@ -17,13 +17,13 @@
           <div class="wallet-identity">
             <div class="wallet-avatar">{{ (addr.label || 'W')[0].toUpperCase() }}</div>
             <div>
-              <div class="wallet-label">{{ addr.label || 'Unnamed' }}</div>
+              <div class="wallet-label">{{ addr.label || 'Unnamed' }} <span class="chain-badge font-mono">{{ getChainSymbol(addr.chain) }}</span></div>
               <div class="wallet-addr font-mono" :title="addr.address">{{ truncateAddress(addr.address) }}</div>
             </div>
           </div>
           <div class="wallet-balance">
             <span class="balance-value font-mono">{{ formatSOL(addr.balance) }}</span>
-            <span class="balance-unit text-dim">SOL</span>
+            <span class="balance-unit text-dim">{{ getChainSymbol(addr.chain) }}</span>
           </div>
         </div>
         <div class="wallet-footer">
@@ -50,6 +50,19 @@
     <EmptyState v-if="addresses.length === 0" :title="t('wallets.noWallets')" :message="t('wallets.noWalletsMsg')" />
 
     <Modal v-model="showAddModal" :title="t('wallets.addWallet')" :submit-label="t('common.add')" @submit="addAddress">
+      <div>
+        <label class="field-label">{{ t('wallets.chain') }}</label>
+        <select v-model="newAddress.chain" class="input-field">
+          <option value="solana">Solana (SOL)</option>
+          <option value="ethereum">Ethereum (ETH)</option>
+          <option value="bitcoin">Bitcoin (BTC)</option>
+          <option value="usdt_erc20">USDT (ERC-20)</option>
+          <option value="usdc_erc20">USDC (ERC-20)</option>
+          <option value="bsc">BNB Chain (BNB)</option>
+          <option value="polygon">Polygon (MATIC)</option>
+          <option value="arbitrum">Arbitrum (ETH)</option>
+        </select>
+      </div>
       <div>
         <label class="field-label">{{ t('wallets.solanaAddress') }}</label>
         <input v-model="newAddress.address" type="text" placeholder="Enter wallet address..." class="input-field input-mono" />
@@ -81,7 +94,15 @@ const toast = useToast()
 const confirm = useConfirm()
 const { data: addresses, refetch } = useFetch('/api/addresses', [])
 const showAddModal = ref(false)
-const newAddress = ref({ address: '', label: '', threshold: 1 })
+const newAddress = ref({ address: '', chain: 'solana', label: '', threshold: 1 })
+
+const chainSymbols = {
+  solana: 'SOL', ethereum: 'ETH', bitcoin: 'BTC',
+  usdt_erc20: 'USDT', usdc_erc20: 'USDC', usdt_trc20: 'USDT',
+  bsc: 'BNB', polygon: 'MATIC', arbitrum: 'ETH'
+}
+
+const getChainSymbol = (chain) => chainSymbols[chain] || chain?.toUpperCase() || 'SOL'
 
 onMounted(() => {
   const { disconnect } = useSSE('/api/events', (type) => {
@@ -94,7 +115,7 @@ const addAddress = async () => {
   try {
     await apiPost('/api/addresses', newAddress.value)
     showAddModal.value = false
-    newAddress.value = { address: '', label: '', threshold: 1 }
+    newAddress.value = { address: '', chain: 'solana', label: '', threshold: 1 }
     addresses.value = await fetch('/api/addresses', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
     toast.success(t('wallets.walletAdded'))
   } catch (e) { toast.error(e.message) }
@@ -151,4 +172,14 @@ const saveThreshold = async (addr) => {
 .threshold-unit { font-size: 0.6875rem; }
 .wallet-actions { display: flex; gap: 6px; }
 .wallet-updated { font-size: 0.625rem; margin-top: 10px; }
+.chain-badge {
+  font-size: 0.5625rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--blue-dim);
+  color: var(--blue-bright);
+  margin-left: 6px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 </style>

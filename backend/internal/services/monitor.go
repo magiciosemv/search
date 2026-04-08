@@ -11,15 +11,15 @@ import (
 
 type MonitorService struct {
 	db       *models.DB
-	solana   *SolanaService
+	chain    ChainService
 	notifier *NotificationService
 	bus      *EventBus
 }
 
-func NewMonitorService(db *models.DB, solana *SolanaService, notifier *NotificationService, bus *EventBus) *MonitorService {
+func NewMonitorService(db *models.DB, chain ChainService, notifier *NotificationService, bus *EventBus) *MonitorService {
 	return &MonitorService{
 		db:       db,
-		solana:   solana,
+		chain:    chain,
 		notifier: notifier,
 		bus:      bus,
 	}
@@ -55,7 +55,7 @@ func (m *MonitorService) checkAllAddresses(ctx context.Context) {
 }
 
 func (m *MonitorService) checkAddress(ctx context.Context, addr models.Address) {
-	balance, err := m.solana.GetBalance(ctx, addr.Address)
+	balance, err := m.chain.GetBalance(ctx, addr.Address, addr.Chain)
 	if err != nil {
 		log.Printf("Failed to get balance for %s: %v", addr.Address, err)
 		return
@@ -66,7 +66,8 @@ func (m *MonitorService) checkAddress(ctx context.Context, addr models.Address) 
 		return
 	}
 
-	log.Printf("Balance changed for %s: %.4f -> %.4f SOL", addr.Address, oldBalance, balance)
+	chainInfo := m.chain.GetChainInfo(addr.Chain)
+	log.Printf("Balance changed for %s [%s]: %.4f -> %.4f %s", addr.Address, chainInfo.Symbol, oldBalance, balance, chainInfo.Symbol)
 
 	// Update stored balance
 	if err := m.db.UpdateAddressBalance(addr.ID, balance); err != nil {

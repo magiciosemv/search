@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -16,16 +15,16 @@ import (
 
 type Handler struct {
 	db       *models.DB
-	solana   *services.SolanaService
+	chain    services.ChainService
 	monitor  *services.MonitorService
 	notifier *services.NotificationService
 	bus      *services.EventBus
 }
 
-func NewHandler(db *models.DB, solana *services.SolanaService, monitor *services.MonitorService, notifier *services.NotificationService, bus *services.EventBus) *Handler {
+func NewHandler(db *models.DB, chain services.ChainService, monitor *services.MonitorService, notifier *services.NotificationService, bus *services.EventBus) *Handler {
 	return &Handler{
 		db:       db,
-		solana:   solana,
+		chain:    chain,
 		monitor:  monitor,
 		notifier: notifier,
 		bus:      bus,
@@ -53,14 +52,6 @@ func parseID(c *gin.Context) int64 {
 	return id
 }
 
-// solanaAddressRegex matches base58-encoded Solana addresses (32-44 chars).
-var solanaAddressRegex = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
-
-// isValidSolanaAddress checks if the string looks like a valid Solana address.
-func isValidSolanaAddress(addr string) bool {
-	return solanaAddressRegex.MatchString(addr)
-}
-
 func (h *Handler) GetAddresses(c *gin.Context) {
 	addresses, err := h.db.GetAllAddresses()
 	if err != nil {
@@ -73,6 +64,7 @@ func (h *Handler) GetAddresses(c *gin.Context) {
 func (h *Handler) CreateAddress(c *gin.Context) {
 	var req struct {
 		Address string `json:"address" binding:"required"`
+		Chain   string `json:"chain"`
 		Label   string `json:"label"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,19 +72,27 @@ func (h *Handler) CreateAddress(c *gin.Context) {
 		return
 	}
 
-	if !isValidSolanaAddress(req.Address) {
-		respondError(c, http.StatusBadRequest, "INVALID_ADDRESS", "invalid Solana address format (base58, 32-44 characters)")
+	if len(req.Address) < 10 || len(req.Address) > 128 {
+		respondError(c, http.StatusBadRequest, "INVALID_ADDRESS", "address length must be between 10 and 128 characters")
 		return
 	}
 
-	addr, err := h.db.CreateAddress(req.Address, req.Label)
+	if req.Chain == "" {
+		req.Chain = "solana"
+	}
+	if !h.chain.IsChainSupported(req.Chain) {
+		respondError(c, http.StatusBadRequest, "INVALID_CHAIN", "unsupported chain: "+req.Chain)
+		return
+	}
+
+	addr, err := h.db.CreateAddress(req.Address, req.Chain, req.Label)
 	if err != nil {
 		respondError(c, http.StatusConflict, "DUPLICATE_ADDRESS", "this address already exists")
 		return
 	}
 
 	// Get initial balance
-	balance, err := h.solana.GetBalance(c.Request.Context(), req.Address)
+	balance, err := h.chain.GetBalance(c.Request.Context(), req.Address, req.Chain)
 	if err == nil {
 		h.db.UpdateAddressBalance(addr.ID, balance)
 		addr.Balance = balance
@@ -171,9 +171,9 @@ func (h *Handler) RefreshAddressBalance(c *gin.Context) {
 		return
 	}
 
-	balance, err := h.solana.GetBalance(c.Request.Context(), addr.Address)
+	balance, err := h.chain.GetBalance(c.Request.Context(), addr.Address, addr.Chain)
 	if err != nil {
-		respondError(c, http.StatusBadGateway, "RPC_ERROR", "failed to fetch balance from Solana RPC")
+		respondError(c, http.StatusBadGateway, "RPC_ERROR", "failed to fetch balance")
 		return
 	}
 
