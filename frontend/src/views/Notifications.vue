@@ -72,8 +72,13 @@
 <script setup>
 import { ref } from 'vue'
 import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
+import { useToast } from '../utils/toast.js'
+import { useConfirm } from '../utils/confirm.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
+
+const toast = useToast()
+const confirm = useConfirm()
 
 const { data: notifications } = useFetch('/api/notifications', [])
 const showAddModal = ref(false)
@@ -88,23 +93,25 @@ const addNotification = async () => {
     showAddModal.value = false
     newNotif.value = { name: '', type: 'telegram', config: { chat_id: '', email: '' } }
     notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-  } catch (e) { alert(e.message) }
+    toast.success('Channel added')
+  } catch (e) { toast.error(e.message) }
 }
 
 const toggleNotification = async (notif) => {
   try {
     await apiPut(`/api/notifications/${notif.id}`, { name: notif.name, type: notif.type, config: notif.config_map || {}, enabled: !notif.enabled })
     notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-  } catch (e) { alert(e.message) }
+    toast.success(notif.enabled ? 'Channel disabled' : 'Channel enabled')
+  } catch (e) { toast.error(e.message) }
 }
 
 const testNotification = async (id) => {
-  try { await apiPost(`/api/notifications/${id}/test`, {}); alert('Test sent!') } catch (e) { alert(e.message) }
+  try { await apiPost(`/api/notifications/${id}/test`, {}); toast.success('Test notification sent') } catch (e) { toast.error(e.message) }
 }
 
 const deleteNotification = async (id) => {
-  if (!confirm('Remove this channel?')) return
-  try { await apiDelete(`/api/notifications/${id}`); notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json()) } catch (e) { alert(e.message) }
+  if (!await confirm.show('Remove this channel?', 'Delete Channel')) return
+  try { await apiDelete(`/api/notifications/${id}`); notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json()); toast.success('Channel removed') } catch (e) { toast.error(e.message) }
 }
 </script>
 

@@ -61,12 +61,16 @@
         </router-view>
       </main>
     </div>
+    <ToastContainer />
+    <ConfirmDialog />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import ToastContainer from './components/ToastContainer.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 
 const route = useRoute()
 const sidebarOpen = ref(false)

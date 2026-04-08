@@ -69,10 +69,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { apiPost, apiDelete, useFetch, useSSE } from '../utils/api.js'
+import { useToast } from '../utils/toast.js'
+import { useConfirm } from '../utils/confirm.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
+const toast = useToast()
+const confirm = useConfirm()
 const { data: addresses, refetch } = useFetch('/api/addresses', [])
 const showAddModal = ref(false)
 const newAddress = ref({ address: '', label: '', threshold: 1 })
@@ -90,16 +94,17 @@ const addAddress = async () => {
     showAddModal.value = false
     newAddress.value = { address: '', label: '', threshold: 1 }
     addresses.value = await fetch('/api/addresses', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-  } catch (e) { alert(e.message) }
+    toast.success('Wallet added')
+  } catch (e) { toast.error(e.message) }
 }
 
 const refreshBalance = async (id) => {
-  try { await apiPost(`/api/addresses/${id}/refresh`, {}); refetch() } catch (e) { alert(e.message) }
+  try { await apiPost(`/api/addresses/${id}/refresh`, {}); refetch(); toast.success('Balance refreshed') } catch (e) { toast.error(e.message) }
 }
 
 const deleteAddress = async (id) => {
-  if (!confirm('Remove this wallet?')) return
-  try { await apiDelete(`/api/addresses/${id}`); refetch() } catch (e) { alert(e.message) }
+  if (!await confirm.show('Remove this wallet?', 'Delete Wallet')) return
+  try { await apiDelete(`/api/addresses/${id}`); refetch(); toast.success('Wallet removed') } catch (e) { toast.error(e.message) }
 }
 
 const saveThreshold = async (addr) => {
@@ -111,7 +116,7 @@ const saveThreshold = async (addr) => {
     } else if (addr.threshold > 0) {
       await apiPost('/api/rules', { address_id: addr.id, rule_type: 'balance_change', threshold: addr.threshold })
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { toast.error('Failed to save threshold') }
 }
 </script>
 
