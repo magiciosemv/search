@@ -2,12 +2,13 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Alert History</h1>
-        <p class="page-subtitle">All triggered notifications</p>
+        <h1 class="page-title">Alerts</h1>
+        <p class="page-subtitle">Triggered notification history</p>
       </div>
+      <span v-if="alerts.length > 0" class="alert-count badge badge-blue">{{ alerts.length }} total</span>
     </div>
 
-    <div class="card alerts-table-card animate-fade-up">
+    <div class="glass alerts-card animate-fade-up">
       <div v-if="alerts.length > 0" class="table-wrap">
         <table class="data-table">
           <thead>
@@ -21,23 +22,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="alert in alerts" :key="alert.id">
+            <tr v-for="alert in alerts" :key="alert.id" class="alert-row">
               <td class="time-cell">
                 <div class="time-primary">{{ formatTime(alert.sent_at) }}</div>
-                <div class="time-date text-muted">{{ formatDateOnly(alert.sent_at) }}</div>
+                <div class="time-date text-dim font-mono">{{ formatDateOnly(alert.sent_at) }}</div>
               </td>
               <td>
-                <span class="addr-badge font-mono" :title="alert.address">{{ truncateAddress(alert.address) }}</span>
+                <span class="addr-chip font-mono" :title="alert.address || alert.addressStr">{{ truncateAddress(alert.address || alert.addressStr) }}</span>
               </td>
               <td>
-                <span class="badge badge-cyan">{{ alert.alert_type }}</span>
+                <span class="badge badge-blue">{{ alert.alert_type }}</span>
               </td>
-              <td class="font-mono val-cell">{{ formatSOL(alert.old_value) }}</td>
-              <td class="font-mono val-cell text-primary">{{ formatSOL(alert.new_value) }}</td>
+              <td class="font-mono val-cell text-muted">{{ formatSOL(alert.old_value) }}</td>
+              <td class="font-mono val-cell">{{ formatSOL(alert.new_value) }}</td>
               <td>
-                <span class="change-val font-mono" :class="getChange(alert) >= 0 ? 'positive' : 'negative'">
-                  <svg v-if="getChange(alert) >= 0" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                  <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <span class="change-chip font-mono" :class="getChange(alert) >= 0 ? 'positive' : 'negative'">
+                  <svg v-if="getChange(alert) >= 0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                  <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                   {{ Math.abs(getChange(alert)).toFixed(4) }}
                 </span>
               </td>
@@ -46,12 +47,12 @@
         </table>
       </div>
 
-      <EmptyState v-if="alerts.length === 0" title="" message="No alerts recorded yet" />
+      <EmptyState v-if="alerts.length === 0" title="No alerts" message="Alerts will appear here when thresholds are triggered" />
     </div>
 
-    <div v-if="alerts.length >= limit" class="load-more-wrap">
-      <button @click="loadMore" class="btn btn-ghost">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+    <div v-if="alerts.length >= limit" class="load-more">
+      <button @click="loadMore" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
         Load More
       </button>
     </div>
@@ -59,8 +60,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { truncateAddress, formatSOL } from '../utils/format.js'
+import { useSSE } from '../utils/api.js'
 import EmptyState from '../components/EmptyState.vue'
 
 const alerts = ref([])
@@ -69,7 +71,9 @@ const offset = ref(0)
 
 const fetchAlerts = async () => {
   try {
-    const res = await fetch(`/api/alerts?limit=${limit.value}&offset=${offset.value}`)
+    const res = await fetch(`/api/alerts?limit=${limit.value}&offset=${offset.value}`, {
+      headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' }
+    })
     const newAlerts = await res.json()
     if (offset.value === 0) {
       alerts.value = newAlerts
@@ -98,69 +102,80 @@ const formatDateOnly = (date) => {
   return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-onMounted(fetchAlerts)
+onMounted(() => {
+  fetchAlerts()
+  const { disconnect } = useSSE('/api/events', (type) => {
+    if (type === 'new_alert') fetchAlerts()
+  })
+  onUnmounted(disconnect)
+})
 </script>
 
 <style scoped>
-.alerts-table-card {
-  overflow: hidden;
-}
+.alerts-card { overflow: hidden; padding: 0; }
+.alert-count { font-size: 0.75rem; font-weight: 600; }
 
-.table-wrap {
-  overflow-x: auto;
-}
+.table-wrap { overflow-x: auto; }
 
-.addr-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  background: rgba(6, 182, 212, 0.06);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.8125rem;
-  color: var(--cyan-bright);
 }
+.data-table th {
+  padding: 12px 18px;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-void);
+  position: sticky;
+  top: 0;
+}
+.data-table td {
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--duration-fast) ease;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: rgba(139, 151, 173, 0.04); }
+
+.alert-row { animation: fadeIn 0.3s var(--ease-out) both; }
 
 .time-cell { white-space: nowrap; }
+.time-primary { font-size: 0.8125rem; font-weight: 500; color: var(--text-primary); }
+.time-date { font-size: 0.625rem; }
 
-.time-primary {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary);
+.addr-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--blue-dim);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--blue-bright);
 }
 
-.time-date {
-  font-size: 0.6875rem;
-  font-family: var(--font-mono);
-}
+.val-cell { color: var(--text-secondary); }
 
-.val-cell {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-}
-
-.change-val {
+.change-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 6px;
 }
+.change-chip.positive { color: var(--green-bright); background: var(--green-dim); }
+.change-chip.negative { color: var(--red-bright); background: var(--red-dim); }
 
-.change-val.positive {
-  color: var(--green-bright);
-  background: rgba(16, 185, 129, 0.08);
-}
-
-.change-val.negative {
-  color: var(--red-bright);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.load-more-wrap {
+.load-more {
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 18px;
 }
 </style>

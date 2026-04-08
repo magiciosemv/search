@@ -10,9 +10,12 @@ import (
 	"net/mail"
 	"net/smtp"
 	"net/url"
+	"strings"
 	"time"
 
 	"solana-monitor/internal/models"
+
+	"golang.org/x/net/proxy"
 )
 
 type NotificationService struct {
@@ -116,14 +119,43 @@ func (n *NotificationService) SendEmail(to, subject, body string) error {
 
 	addr := n.smtpConfig.Host + ":" + n.smtpConfig.Port
 
-	// Connect with TLS (STARTTLS)
-	tlsConfig := &tls.Config{
-		ServerName: n.smtpConfig.Host,
+	var conn net.Conn
+
+	// Connect through SOCKS5 proxy if configured
+	if n.proxyURL != "" {
+		proxyURL, parseErr := url.Parse(n.proxyURL)
+		if parseErr != nil {
+			return fmt.Errorf("failed to parse proxy URL: %w", parseErr)
+		}
+
+		// Extract SOCKS5 proxy address (strip http:// prefix)
+		proxyAddr := proxyURL.Host
+		if proxyAddr == "" {
+			proxyAddr = strings.TrimPrefix(n.proxyURL, "http://")
+			proxyAddr = strings.TrimPrefix(proxyAddr, "socks5://")
+			proxyAddr = strings.TrimPrefix(proxyAddr, "socks5h://")
+		}
+
+		dialer, dialErr := proxy.SOCKS5("tcp", proxyAddr, nil, &net.Dialer{Timeout: 10 * time.Second})
+		if dialErr != nil {
+			return fmt.Errorf("failed to create SOCKS5 dialer: %w", dialErr)
+		}
+
+		conn, err = dialer.Dial("tcp", addr)
+	} else {
+		conn, err = net.DialTimeout("tcp", addr, 10*time.Second)
 	}
 
-	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
+	}
+
+	// Read SMTP server greeting (with timeout)
+	// smtp.NewClient will read the greeting, but we need to set a deadline first
+	conn.SetDeadline(time.Now().Add(15 * time.Second))
+
+	tlsConfig := &tls.Config{
+		ServerName: n.smtpConfig.Host,
 	}
 
 	client, err := smtp.NewClient(conn, n.smtpConfig.Host)
