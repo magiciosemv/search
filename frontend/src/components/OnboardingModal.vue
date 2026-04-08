@@ -8,7 +8,7 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
             </svg>
           </div>
-          <h2 class="onboarding-title">Welcome to Solana Monitor</h2>
+          <h2 class="onboarding-title">{{ t('onboarding.welcome') }}</h2>
           <div class="step-dots">
             <span v-for="i in 3" :key="i" class="dot" :class="{ active: step >= i }"></span>
           </div>
@@ -20,31 +20,31 @@
               <div class="step-icon">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>
               </div>
-              <h3>Add Your Wallet</h3>
-              <p>Start by adding a Solana wallet address to monitor its balance in real-time.</p>
+              <h3>{{ t('onboarding.step1Title') }}</h3>
+              <p>{{ t('onboarding.step1Desc') }}</p>
             </div>
             <div v-else-if="step === 2" key="2" class="step-content">
               <div class="step-icon">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
               </div>
-              <h3>Set Up Notifications</h3>
-              <p>Configure Telegram or email channels to receive instant balance change alerts.</p>
+              <h3>{{ t('onboarding.step2Title') }}</h3>
+              <p>{{ t('onboarding.step2Desc') }}</p>
             </div>
             <div v-else key="3" class="step-content">
               <div class="step-icon success-icon">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
-              <h3>You're All Set!</h3>
-              <p>The monitor will check balances every 30 seconds and notify you of changes.</p>
+              <h3>{{ t('onboarding.step3Title') }}</h3>
+              <p>{{ t('onboarding.step3Desc') }}</p>
             </div>
           </Transition>
         </div>
 
         <div class="onboarding-footer">
-          <button v-if="step < 3" class="btn btn-ghost btn-sm" @click="skip">Skip</button>
-          <span class="step-counter font-mono">Step {{ step }} / 3</span>
-          <button v-if="step < 3" class="btn btn-primary btn-sm" @click="step++">Next</button>
-          <button v-else class="btn btn-primary btn-sm" @click="finish">Get Started</button>
+          <button v-if="step < 3" class="btn btn-ghost btn-sm" @click="skip">{{ t('onboarding.skip') }}</button>
+          <span class="step-counter font-mono">{{ t('onboarding.step') }} {{ step }} / 3</span>
+          <button v-if="step < 3" class="btn btn-primary btn-sm" @click="step++">{{ t('onboarding.next') }}</button>
+          <button v-else class="btn btn-primary btn-sm" @click="finish">{{ t('onboarding.done') }}</button>
         </div>
       </div>
     </div>
@@ -53,6 +53,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from '../utils/i18n.js'
+
+const { t } = useI18n()
 
 defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue'])

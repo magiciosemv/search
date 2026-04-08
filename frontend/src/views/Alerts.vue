@@ -2,14 +2,14 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Alerts</h1>
-        <p class="page-subtitle">Triggered notification history</p>
+        <h1 class="page-title">{{ t('alerts.title') }}</h1>
+        <p class="page-subtitle">{{ t('alerts.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <span v-if="filteredAlerts.length !== alerts.length" class="badge badge-blue">{{ filteredAlerts.length }} / {{ alerts.length }}</span>
         <button v-if="alerts.length > 0" class="btn btn-ghost btn-sm" @click="exportCSV">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export CSV
+          {{ t('alerts.exportCSV') }}
         </button>
       </div>
     </div>
@@ -17,9 +17,9 @@
     <div v-if="alerts.length > 0" class="filter-bar glass">
       <div class="filter-group">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        <input v-model="filterAddr" type="text" placeholder="Filter by address..." class="input-field input-mono filter-input" />
+        <input v-model="filterAddr" type="text" :placeholder="t('alerts.filterAddress')" class="input-field input-mono filter-input" />
         <select v-model="filterType" class="input-field filter-select">
-          <option value="">All types</option>
+          <option value="">{{ t('alerts.allTypes') }}</option>
           <option v-for="t in alertTypes" :key="t" :value="t">{{ t }}</option>
         </select>
       </div>
@@ -30,12 +30,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Address</th>
-              <th>Type</th>
-              <th>Before</th>
-              <th>After</th>
-              <th>Change</th>
+              <th>{{ t('alerts.time') }}</th>
+              <th>{{ t('alerts.address') }}</th>
+              <th>{{ t('alerts.type') }}</th>
+              <th>{{ t('alerts.before') }}</th>
+              <th>{{ t('alerts.after') }}</th>
+              <th>{{ t('alerts.change') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -64,15 +64,15 @@
         </table>
       </div>
 
-      <EmptyState v-if="alerts.length === 0" title="No alerts" message="Alerts will appear here when thresholds are triggered" />
+      <EmptyState v-if="alerts.length === 0" :title="t('alerts.noAlerts')" :message="t('alerts.noAlertsMsg')" />
     </div>
 
-    <EmptyState v-if="alerts.length > 0 && filteredAlerts.length === 0" title="No matches" message="Try different filter criteria" />
+    <EmptyState v-if="alerts.length > 0 && filteredAlerts.length === 0" :title="t('alerts.noMatches')" :message="t('alerts.noMatchesMsg')" />
 
     <div v-if="alerts.length >= limit" class="load-more">
       <button @click="loadMore" class="btn btn-ghost btn-sm">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-        Load More
+        {{ t('alerts.loadMore') }}
       </button>
     </div>
   </div>
@@ -82,8 +82,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { truncateAddress, formatSOL } from '../utils/format.js'
 import { useSSE } from '../utils/api.js'
+import { useI18n } from '../utils/i18n.js'
 import EmptyState from '../components/EmptyState.vue'
 import { useToast } from '../utils/toast.js'
+const { t } = useI18n()
 const toast = useToast()
 
 const alerts = ref([])
@@ -122,7 +124,7 @@ const exportCSV = () => {
   link.download = `alerts-${new Date().toISOString().slice(0, 10)}.csv`
   link.click()
   URL.revokeObjectURL(url)
-  toast.success('CSV exported')
+  toast.success(t('alerts.csvExported'))
 }
 
 const fetchAlerts = async () => {

@@ -1,16 +1,17 @@
-import { ref, computed } from 'vue'
+import { ref, reactive } from 'vue'
 
 const locale = ref(localStorage.getItem('locale') || 'en')
+const messages = reactive({})
+const loaded = ref(0)
 
-const messages = {}
-
-function loadMessages(lang) {
+async function loadMessages(lang) {
   if (messages[lang]) return
-  import(`./locales/${lang}.js`).then(m => {
-    messages[lang] = m.default
-  })
+  const m = await import(`./locales/${lang}.js`)
+  messages[lang] = m.default
+  loaded.value++
 }
 
+// Load initial locale synchronously if possible, or async
 loadMessages(locale.value)
 
 function t(key) {
@@ -24,12 +25,10 @@ function t(key) {
   return result
 }
 
-function setLocale(lang) {
+async function setLocale(lang) {
+  await loadMessages(lang)
   locale.value = lang
   localStorage.setItem('locale', lang)
-  if (!messages[lang]) {
-    loadMessages(lang)
-  }
   document.documentElement.setAttribute('lang', lang)
 }
 

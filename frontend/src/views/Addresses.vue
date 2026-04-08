@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Wallets</h1>
-        <p class="page-subtitle">Monitored Solana addresses</p>
+        <h1 class="page-title">{{ t('wallets.title') }}</h1>
+        <p class="page-subtitle">{{ t('wallets.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="showAddModal = true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Wallet
+        {{ t('wallets.addWallet') }}
       </button>
     </div>
 
@@ -28,7 +28,7 @@
         </div>
         <div class="wallet-footer">
           <div class="threshold-group">
-            <span class="threshold-label text-muted">Threshold</span>
+            <span class="threshold-label text-muted">{{ t('wallets.threshold') }}</span>
             <input v-model.number="addr.threshold" @change="saveThreshold(addr)"
               type="number" step="0.1" min="0" class="input-field input-mono threshold-input" />
             <span class="threshold-unit text-dim font-mono">SOL</span>
@@ -36,30 +36,30 @@
           <div class="wallet-actions">
             <button @click="refreshBalance(addr.id)" class="btn btn-ghost btn-sm">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-              Refresh
+              {{ t('wallets.refresh') }}
             </button>
             <button @click="deleteAddress(addr.id)" class="btn btn-danger btn-sm">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
           </div>
         </div>
-        <div class="wallet-updated text-dim font-mono" v-if="addr.updated_at">Updated {{ formatDate(addr.updated_at) }}</div>
+        <div class="wallet-updated text-dim font-mono" v-if="addr.updated_at">{{ t('wallets.updated') }} {{ formatDate(addr.updated_at) }}</div>
       </div>
     </div>
 
-    <EmptyState v-if="addresses.length === 0" title="No wallets yet" message="Add a Solana address to start monitoring" />
+    <EmptyState v-if="addresses.length === 0" :title="t('wallets.noWallets')" :message="t('wallets.noWalletsMsg')" />
 
-    <Modal v-model="showAddModal" title="Add Wallet" submit-label="Add" @submit="addAddress">
+    <Modal v-model="showAddModal" :title="t('wallets.addWallet')" :submit-label="t('common.add')" @submit="addAddress">
       <div>
-        <label class="field-label">Solana Address</label>
+        <label class="field-label">{{ t('wallets.solanaAddress') }}</label>
         <input v-model="newAddress.address" type="text" placeholder="Enter wallet address..." class="input-field input-mono" />
       </div>
       <div>
-        <label class="field-label">Label</label>
+        <label class="field-label">{{ t('wallets.label') }}</label>
         <input v-model="newAddress.label" type="text" placeholder="e.g. Main Wallet" class="input-field" />
       </div>
       <div>
-        <label class="field-label">Alert Threshold (SOL)</label>
+        <label class="field-label">{{ t('wallets.alertThreshold') }}</label>
         <input v-model.number="newAddress.threshold" type="number" step="0.1" min="0" class="input-field input-mono" />
       </div>
     </Modal>
@@ -71,10 +71,12 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { apiPost, apiDelete, useFetch, useSSE } from '../utils/api.js'
 import { useToast } from '../utils/toast.js'
 import { useConfirm } from '../utils/confirm.js'
+import { useI18n } from '../utils/i18n.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
+const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
 const { data: addresses, refetch } = useFetch('/api/addresses', [])
@@ -94,17 +96,17 @@ const addAddress = async () => {
     showAddModal.value = false
     newAddress.value = { address: '', label: '', threshold: 1 }
     addresses.value = await fetch('/api/addresses', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-    toast.success('Wallet added')
+    toast.success(t('wallets.walletAdded'))
   } catch (e) { toast.error(e.message) }
 }
 
 const refreshBalance = async (id) => {
-  try { await apiPost(`/api/addresses/${id}/refresh`, {}); refetch(); toast.success('Balance refreshed') } catch (e) { toast.error(e.message) }
+  try { await apiPost(`/api/addresses/${id}/refresh`, {}); refetch(); toast.success(t('wallets.balanceRefreshed')) } catch (e) { toast.error(e.message) }
 }
 
 const deleteAddress = async (id) => {
-  if (!await confirm.show('Remove this wallet?', 'Delete Wallet')) return
-  try { await apiDelete(`/api/addresses/${id}`); refetch(); toast.success('Wallet removed') } catch (e) { toast.error(e.message) }
+  if (!await confirm.show(t('wallets.removeWallet'), t('wallets.deleteWallet'))) return
+  try { await apiDelete(`/api/addresses/${id}`); refetch(); toast.success(t('wallets.walletRemoved')) } catch (e) { toast.error(e.message) }
 }
 
 const saveThreshold = async (addr) => {
@@ -116,7 +118,7 @@ const saveThreshold = async (addr) => {
     } else if (addr.threshold > 0) {
       await apiPost('/api/rules', { address_id: addr.id, rule_type: 'balance_change', threshold: addr.threshold })
     }
-  } catch (e) { toast.error('Failed to save threshold') }
+  } catch (e) { toast.error(t('wallets.saveThresholdFailed')) }
 }
 </script>
 

@@ -24,6 +24,7 @@ export default {
     viewAll: '查看全部',
     noAlerts: '暂无告警',
     backup: '备份数据库',
+    backupDownloaded: '数据库备份已下载',
   },
   wallets: {
     title: '钱包',

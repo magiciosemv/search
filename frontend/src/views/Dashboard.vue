@@ -3,33 +3,33 @@
     <div class="stats-grid stagger">
       <div v-for="stat in statCards" :key="stat.label" class="stat-card glass animate-fade-up">
         <div class="stat-top">
-          <span class="stat-label">{{ stat.label }}</span>
+          <span class="stat-label">{{ t(stat.label) }}</span>
           <div class="stat-icon" :class="stat.iconClass" v-html="stat.icon"></div>
         </div>
         <div class="stat-value font-mono">{{ stats[stat.key] ?? 0 }}</div>
-        <div class="stat-footer text-dim font-mono">{{ stat.sub }}</div>
+        <div class="stat-footer text-dim font-mono">{{ t(stat.sub) }}</div>
       </div>
     </div>
 
     <div class="glass monitor-bar animate-fade-up" style="animation-delay: 180ms">
       <div class="monitor-left">
         <span class="status-dot"></span>
-        <span class="monitor-label">Monitor Service</span>
-        <span class="monitor-interval font-mono">every 30s</span>
+        <span class="monitor-label">{{ t('dashboard.monitorService') }}</span>
+        <span class="monitor-interval font-mono">{{ t('dashboard.every30s') }}</span>
       </div>
-      <span class="badge badge-success">{{ monitorRunning ? 'Running' : 'Stopped' }}</span>
+      <span class="badge badge-success">{{ monitorRunning ? t('dashboard.running') : t('dashboard.stopped') }}</span>
       <button class="btn btn-ghost btn-sm" @click="backupDB">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Backup
+        {{ t('dashboard.backup') }}
       </button>
     </div>
 
     <div class="glass alerts-section animate-fade-up" style="animation-delay: 260ms">
       <div class="alerts-header">
-        <h2 class="section-title">Recent Alerts</h2>
-        <router-link to="/alerts" class="view-link">View all</router-link>
+        <h2 class="section-title">{{ t('dashboard.recentAlerts') }}</h2>
+        <router-link to="/alerts" class="view-link">{{ t('dashboard.viewAll') }}</router-link>
       </div>
-      <EmptyState v-if="!recentAlerts || recentAlerts.length === 0" message="No alerts yet" />
+      <EmptyState v-if="!recentAlerts || recentAlerts.length === 0" :message="t('dashboard.noAlerts')" />
       <div v-else class="alert-list">
         <div v-for="alert in recentAlerts" :key="alert.id" class="alert-row">
           <span class="alert-addr font-mono text-blue">{{ truncateAddress(alert.address || alert.addressStr) }}</span>
@@ -51,9 +51,11 @@ import { onMounted, onUnmounted } from 'vue'
 import { useFetch, useSSE } from '../utils/api.js'
 import { truncateAddress, formatDate, formatSOL } from '../utils/format.js'
 import { useToast } from '../utils/toast.js'
+import { useI18n } from '../utils/i18n.js'
 import EmptyState from '../components/EmptyState.vue'
 
 const toast = useToast()
+const { t } = useI18n()
 
 const { data: stats, refetch: refetchStats } = useFetch('/api/stats', {})
 const { data: recentAlerts, refetch: refetchAlerts } = useFetch('/api/alerts?limit=5', [])
@@ -71,25 +73,25 @@ const backupDB = async () => {
     a.download = `solana-monitor-backup-${new Date().toISOString().slice(0, 10)}.db`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('Database backup downloaded')
+    toast.success(t('dashboard.backupDownloaded'))
   } catch (e) { toast.error(e.message) }
 }
 
 const statCards = [
   {
-    label: 'Wallets', key: 'total_addresses', iconClass: 'icon-blue', sub: 'monitored',
+    label: 'dashboard.wallets', key: 'total_addresses', iconClass: 'icon-blue', sub: 'dashboard.monitored',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>'
   },
   {
-    label: 'Channels', key: 'total_notifications', iconClass: 'icon-purple', sub: 'active',
+    label: 'dashboard.channels', key: 'total_notifications', iconClass: 'icon-purple', sub: 'dashboard.active',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>'
   },
   {
-    label: 'Total Alerts', key: 'total_alerts', iconClass: 'icon-amber', sub: 'all time',
+    label: 'dashboard.totalAlerts', key: 'total_alerts', iconClass: 'icon-amber', sub: 'dashboard.allTime',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
   },
   {
-    label: 'Today', key: 'today_alerts', iconClass: 'icon-green', sub: '24h',
+    label: 'dashboard.today', key: 'today_alerts', iconClass: 'icon-green', sub: 'dashboard.last24h',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
   }
 ]

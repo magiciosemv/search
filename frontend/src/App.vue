@@ -18,7 +18,7 @@
           class="nav-item" :class="{ active: $route.path === item.path }"
           @click="sidebarOpen = false">
           <div class="nav-icon" v-html="item.icon"></div>
-          <span class="nav-label">{{ item.name }}</span>
+          <span class="nav-label">{{ t('nav.' + item.key) }}</span>
         </router-link>
       </nav>
 
@@ -33,7 +33,7 @@
           </button>
           <div class="sidebar-status">
             <span class="status-dot"></span>
-            <span class="status-text">{{ monitorRunning ? 'Monitor Active' : 'Offline' }}</span>
+            <span class="status-text">{{ monitorRunning ? t('dashboard.running') : t('dashboard.stopped') }}</span>
           </div>
         </div>
       </div>
@@ -95,29 +95,29 @@ const currentTime = ref('')
 
 const navItems = [
   {
-    path: '/', name: 'Dashboard',
+    path: '/', key: 'dashboard',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>'
   },
   {
-    path: '/addresses', name: 'Wallets',
+    path: '/addresses', key: 'wallets',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>'
   },
   {
-    path: '/notifications', name: 'Channels',
+    path: '/notifications', key: 'channels',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>'
   },
   {
-    path: '/alerts', name: 'Alerts',
+    path: '/alerts', key: 'alerts',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
   },
   {
-    path: '/rules', name: 'Rules',
+    path: '/rules', key: 'rules',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'
   }
 ]
 
-const pageNames = { '/': 'Dashboard', '/addresses': 'Wallets', '/notifications': 'Channels', '/alerts': 'Alerts', '/rules': 'Rules' }
-const currentPage = computed(() => pageNames[route.path] || '')
+const pageNames = { '/': 'nav.dashboard', '/addresses': 'nav.wallets', '/notifications': 'nav.channels', '/alerts': 'nav.alerts', '/rules': 'nav.rules' }
+const currentPage = computed(() => t(pageNames[route.path] || ''))
 
 let timer
 onMounted(() => {

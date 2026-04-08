@@ -10,7 +10,7 @@
         </div>
         <div class="modal-body"><slot /></div>
         <div class="modal-footer">
-          <button class="btn btn-ghost btn-sm" @click="$emit('update:modelValue', false)">Cancel</button>
+          <button class="btn btn-ghost btn-sm" @click="$emit('update:modelValue', false)">{{ t('common.cancel') }}</button>
           <button class="btn btn-primary btn-sm" @click="$emit('submit')">{{ submitLabel }}</button>
         </div>
       </div>
@@ -19,6 +19,10 @@
 </template>
 
 <script setup>
+import { useI18n } from '../utils/i18n.js'
+
+const { t } = useI18n()
+
 defineProps({
   modelValue: Boolean,
   title: String,

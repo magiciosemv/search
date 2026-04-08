@@ -24,6 +24,7 @@ export default {
     viewAll: 'View all',
     noAlerts: 'No alerts yet',
     backup: 'Backup DB',
+    backupDownloaded: 'Database backup downloaded',
   },
   wallets: {
     title: 'Wallets',

@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Channels</h1>
-        <p class="page-subtitle">Alert delivery channels</p>
+        <h1 class="page-title">{{ t('channels.title') }}</h1>
+        <p class="page-subtitle">{{ t('channels.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="showAddModal = true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Channel
+        {{ t('channels.addChannel') }}
       </button>
     </div>
 
@@ -32,37 +32,37 @@
         </div>
 
         <div class="notif-config">
-          <span class="config-key text-dim">{{ notif.type === 'telegram' ? 'Chat ID' : 'Address' }}</span>
+          <span class="config-key text-dim">{{ notif.type === 'telegram' ? t('channels.chatIdLabel') : t('channels.addressLabel') }}</span>
           <span class="config-value font-mono text-secondary">{{ getConfigValue(notif) }}</span>
         </div>
 
         <div class="notif-actions">
-          <button @click="testNotification(notif.id)" class="btn btn-ghost btn-sm">Test</button>
-          <button @click="deleteNotification(notif.id)" class="btn btn-danger btn-sm">Remove</button>
+          <button @click="testNotification(notif.id)" class="btn btn-ghost btn-sm">{{ t('channels.test') }}</button>
+          <button @click="deleteNotification(notif.id)" class="btn btn-danger btn-sm">{{ t('channels.remove') }}</button>
         </div>
       </div>
     </div>
 
-    <EmptyState v-if="!notifications || notifications.length === 0" title="No channels" message="Add Telegram or email to receive alerts" />
+    <EmptyState v-if="!notifications || notifications.length === 0" :title="t('channels.noChannels')" :message="t('channels.noChannelsMsg')" />
 
-    <Modal v-model="showAddModal" title="Add Channel" submit-label="Add" @submit="addNotification">
+    <Modal v-model="showAddModal" :title="t('channels.addChannel')" :submit-label="t('common.add')" @submit="addNotification">
       <div>
-        <label class="field-label">Channel Name</label>
+        <label class="field-label">{{ t('channels.channelName') }}</label>
         <input v-model="newNotif.name" type="text" placeholder="e.g. My Telegram" class="input-field" />
       </div>
       <div>
-        <label class="field-label">Type</label>
+        <label class="field-label">{{ t('channels.type') }}</label>
         <div class="type-selector">
           <button @click="newNotif.type = 'telegram'" class="type-btn" :class="{ active: newNotif.type === 'telegram' }">Telegram</button>
           <button @click="newNotif.type = 'email'" class="type-btn" :class="{ active: newNotif.type === 'email' }">Email</button>
         </div>
       </div>
       <div v-if="newNotif.type === 'telegram'">
-        <label class="field-label">Chat ID</label>
+        <label class="field-label">{{ t('channels.chatId') }}</label>
         <input v-model="newNotif.config.chat_id" type="text" placeholder="Enter Chat ID..." class="input-field input-mono" />
       </div>
       <div v-if="newNotif.type === 'email'">
-        <label class="field-label">Email Address</label>
+        <label class="field-label">{{ t('channels.emailAddress') }}</label>
         <input v-model="newNotif.config.email" type="email" placeholder="your@email.com" class="input-field input-mono" />
       </div>
     </Modal>
@@ -74,9 +74,11 @@ import { ref } from 'vue'
 import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
 import { useToast } from '../utils/toast.js'
 import { useConfirm } from '../utils/confirm.js'
+import { useI18n } from '../utils/i18n.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
+const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
 
@@ -93,7 +95,7 @@ const addNotification = async () => {
     showAddModal.value = false
     newNotif.value = { name: '', type: 'telegram', config: { chat_id: '', email: '' } }
     notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-    toast.success('Channel added')
+    toast.success(t('channels.channelAdded'))
   } catch (e) { toast.error(e.message) }
 }
 
@@ -101,17 +103,17 @@ const toggleNotification = async (notif) => {
   try {
     await apiPut(`/api/notifications/${notif.id}`, { name: notif.name, type: notif.type, config: notif.config_map || {}, enabled: !notif.enabled })
     notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json())
-    toast.success(notif.enabled ? 'Channel disabled' : 'Channel enabled')
+    toast.success(t(notif.enabled ? 'channels.channelDisabled' : 'channels.channelEnabled'))
   } catch (e) { toast.error(e.message) }
 }
 
 const testNotification = async (id) => {
-  try { await apiPost(`/api/notifications/${id}/test`, {}); toast.success('Test notification sent') } catch (e) { toast.error(e.message) }
+  try { await apiPost(`/api/notifications/${id}/test`, {}); toast.success(t('channels.testSent')) } catch (e) { toast.error(e.message) }
 }
 
 const deleteNotification = async (id) => {
-  if (!await confirm.show('Remove this channel?', 'Delete Channel')) return
-  try { await apiDelete(`/api/notifications/${id}`); notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json()); toast.success('Channel removed') } catch (e) { toast.error(e.message) }
+  if (!await confirm.show(t('channels.removeChannel'), t('channels.deleteChannel'))) return
+  try { await apiDelete(`/api/notifications/${id}`); notifications.value = await fetch('/api/notifications', { headers: { Authorization: 'Bearer solana-monitor-secret-key-2024' } }).then(r => r.json()); toast.success(t('channels.channelRemoved')) } catch (e) { toast.error(e.message) }
 }
 </script>
 

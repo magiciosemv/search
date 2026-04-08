@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Rules</h1>
-        <p class="page-subtitle">Alert trigger rules</p>
+        <h1 class="page-title">{{ t('rules.title') }}</h1>
+        <p class="page-subtitle">{{ t('rules.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="showAddModal = true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Rule
+        {{ t('rules.addRule') }}
       </button>
     </div>
 
@@ -19,7 +19,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <div>
-              <div class="rule-type badge badge-blue">{{ rule.rule_type === 'balance_change' ? 'Balance Change' : rule.rule_type }}</div>
+              <div class="rule-type badge badge-blue">{{ rule.rule_type === 'balance_change' ? t('rules.balanceChange') : rule.rule_type }}</div>
               <div class="rule-wallet text-muted font-mono" v-if="getAddress(rule.address_id)">{{ truncateAddress(getAddress(rule.address_id).address) }}</div>
             </div>
           </div>
@@ -31,30 +31,30 @@
           </div>
         </div>
         <div class="rule-actions">
-          <button @click="editRule(rule)" class="btn btn-ghost btn-sm">Edit</button>
-          <button @click="deleteRule(rule.id)" class="btn btn-danger btn-sm">Remove</button>
+          <button @click="editRule(rule)" class="btn btn-ghost btn-sm">{{ t('common.edit') }}</button>
+          <button @click="deleteRule(rule.id)" class="btn btn-danger btn-sm">{{ t('common.delete') }}</button>
         </div>
       </div>
     </div>
 
-    <EmptyState v-if="!rules || rules.length === 0" title="No rules" message="Create rules to trigger alerts on balance changes" />
+    <EmptyState v-if="!rules || rules.length === 0" :title="t('rules.noRules')" :message="t('rules.noRulesMsg')" />
 
-    <Modal v-model="showAddModal" :title="editingRule ? 'Edit Rule' : 'Add Rule'" :submit-label="editingRule ? 'Save' : 'Add'" @submit="submitRule">
+    <Modal v-model="showAddModal" :title="editingRule ? t('common.edit') : t('rules.addRule')" :submit-label="editingRule ? t('common.save') : t('common.add')" @submit="submitRule">
       <div>
-        <label class="field-label">Wallet</label>
+        <label class="field-label">{{ t('rules.wallet') }}</label>
         <select v-model="form.address_id" class="input-field">
           <option value="">Select wallet...</option>
           <option v-for="addr in addresses" :key="addr.id" :value="addr.id">{{ addr.label || truncateAddress(addr.address) }}</option>
         </select>
       </div>
       <div>
-        <label class="field-label">Rule Type</label>
+        <label class="field-label">{{ t('rules.ruleType') }}</label>
         <select v-model="form.rule_type" class="input-field">
-          <option value="balance_change">Balance Change</option>
+          <option value="balance_change">{{ t('rules.balanceChange') }}</option>
         </select>
       </div>
       <div>
-        <label class="field-label">Threshold (SOL)</label>
+        <label class="field-label">{{ t('rules.threshold') }}</label>
         <input v-model.number="form.threshold" type="number" step="0.1" min="0" class="input-field input-mono" />
       </div>
     </Modal>
@@ -67,9 +67,11 @@ import { apiPost, apiPut, apiDelete, useFetch } from '../utils/api.js'
 import { useToast } from '../utils/toast.js'
 import { useConfirm } from '../utils/confirm.js'
 import { truncateAddress } from '../utils/format.js'
+import { useI18n } from '../utils/i18n.js'
 import Modal from '../components/Modal.vue'
 import EmptyState from '../components/EmptyState.vue'
 
+const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
 
@@ -92,10 +94,10 @@ const submitRule = async () => {
   try {
     if (editingRule.value) {
       await apiPut(`/api/rules/${editingRule.value.id}`, { rule_type: form.value.rule_type, threshold: form.value.threshold, enabled: editingRule.value.enabled })
-      toast.success('Rule updated')
+      toast.success(t('rules.ruleUpdated'))
     } else {
       await apiPost('/api/rules', { address_id: Number(form.value.address_id), rule_type: form.value.rule_type, threshold: form.value.threshold })
-      toast.success('Rule added')
+      toast.success(t('rules.ruleAdded'))
     }
     showAddModal.value = false
     editingRule.value = null
@@ -112,8 +114,8 @@ const toggleRule = async (rule) => {
 }
 
 const deleteRule = async (id) => {
-  if (!await confirm.show('Remove this rule?', 'Delete Rule')) return
-  try { await apiDelete(`/api/rules/${id}`); toast.success('Rule removed'); refetchRules() } catch (e) { toast.error(e.message) }
+  if (!await confirm.show(t('rules.removeRule'), t('rules.deleteRule'))) return
+  try { await apiDelete(`/api/rules/${id}`); toast.success(t('rules.ruleRemoved')); refetchRules() } catch (e) { toast.error(e.message) }
 }
 </script>
 
