@@ -23,7 +23,7 @@
           </div>
           <div class="wallet-balance">
             <span class="balance-value font-mono">{{ formatSOL(addr.balance) }}</span>
-            <span class="balance-unit text-dim">{{ getChainSymbol(addr.chain) }}</span>
+            <span class="balance-unit">{{ getChainSymbol(addr.chain) }}</span>
           </div>
         </div>
         <div class="wallet-footer">
@@ -31,7 +31,7 @@
             <span class="threshold-label text-muted">{{ t('wallets.threshold') }}</span>
             <input v-model.number="addr.threshold" @change="saveThreshold(addr)"
               type="number" step="0.1" min="0" class="input-field input-mono threshold-input" />
-            <span class="threshold-unit text-dim font-mono">SOL</span>
+            <span class="threshold-unit text-dim font-mono">{{ getChainSymbol(addr.chain) }}</span>
           </div>
           <div class="wallet-actions">
             <button @click="refreshBalance(addr.id)" class="btn btn-ghost btn-sm">
@@ -160,22 +160,22 @@ const saveThreshold = async (addr) => {
 
 <style scoped>
 .wallet-list { display: flex; flex-direction: column; gap: 10px; }
-.wallet-card { padding: 18px 20px; }
+.wallet-card { padding: 16px 18px; }
 .wallet-card:active { transform: scale(0.998); }
 
 .wallet-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
 .wallet-identity { display: flex; align-items: center; gap: 14px; }
 .wallet-avatar {
-  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
   border-radius: 10px; font-weight: 700; font-size: 0.9375rem;
-  background: var(--blue-dim); border: 1px solid rgba(59, 130, 246, 0.18);
-  color: var(--blue-bright);
+  background: var(--cyan-dim); border: 1px solid rgba(0, 240, 255, 0.15);
+  color: var(--cyan-base);
 }
-.wallet-label { font-size: 0.9375rem; font-weight: 600; }
-.wallet-addr { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+.wallet-label { font-size: 0.875rem; font-weight: 600; }
+.wallet-addr { font-size: 0.6875rem; color: var(--text-dim); margin-top: 1px; }
 .wallet-balance { text-align: right; }
-.balance-value { font-size: 1.375rem; font-weight: 700; }
-.balance-unit { font-size: 0.6875rem; margin-left: 3px; }
+.balance-value { font-size: 1.25rem; font-weight: 700; }
+.balance-unit { color: var(--cyan-base); font-size: 0.6875rem; margin-left: 3px; }
 
 .wallet-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -183,18 +183,19 @@ const saveThreshold = async (addr) => {
 }
 .threshold-group { display: flex; align-items: center; gap: 7px; }
 .threshold-label { font-size: 0.6875rem; font-weight: 600; }
-.threshold-input { width: 72px !important; padding: 6px 10px !important; font-size: 0.75rem !important; }
+.threshold-input { width: 64px !important; padding: 5px 8px !important; }
 .threshold-unit { font-size: 0.6875rem; }
 .wallet-actions { display: flex; gap: 6px; }
 .wallet-updated { font-size: 0.625rem; margin-top: 10px; }
 .chain-badge {
-  font-size: 0.5625rem;
+  font-size: 0.5rem;
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--blue-dim);
-  color: var(--blue-bright);
+  background: var(--cyan-dim);
+  color: var(--cyan-base);
+  border: 1px solid rgba(0, 240, 255, 0.12);
   margin-left: 6px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 </style>

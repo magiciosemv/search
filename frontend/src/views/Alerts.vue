@@ -6,7 +6,7 @@
         <p class="page-subtitle">{{ t('alerts.subtitle') }}</p>
       </div>
       <div class="header-actions">
-        <span v-if="filteredAlerts.length !== alerts.length" class="badge badge-blue">{{ filteredAlerts.length }} / {{ alerts.length }}</span>
+        <span v-if="filteredAlerts.length !== alerts.length" class="badge badge-cyan">{{ filteredAlerts.length }} / {{ alerts.length }}</span>
         <button v-if="alerts.length > 0" class="btn btn-ghost btn-sm" @click="exportCSV">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           {{ t('alerts.exportCSV') }}
@@ -48,7 +48,7 @@
                 <span class="addr-chip font-mono" :title="alert.address || alert.addressStr">{{ truncateAddress(alert.address || alert.addressStr) }}</span>
               </td>
               <td>
-                <span class="badge badge-blue">{{ alert.alert_type }}</span>
+                <span class="badge badge-cyan">{{ alert.alert_type }}</span>
               </td>
               <td class="font-mono val-cell text-muted">{{ formatSOL(alert.old_value) }}</td>
               <td class="font-mono val-cell">{{ formatSOL(alert.new_value) }}</td>
@@ -183,11 +183,12 @@ onMounted(() => {
 .data-table th {
   padding: 12px 18px;
   text-align: left;
-  font-size: 0.6875rem;
+  font-family: var(--font-display);
+  font-size: 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  color: var(--cyan-base);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-void);
   position: sticky;
@@ -199,7 +200,7 @@ onMounted(() => {
   transition: background var(--duration-fast) ease;
 }
 .data-table tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: rgba(139, 151, 173, 0.04); }
+.data-table tbody tr:hover td { background: rgba(0, 240, 255, 0.03); }
 
 .alert-row { animation: fadeIn 0.3s var(--ease-out) both; }
 
@@ -210,11 +211,11 @@ onMounted(() => {
 .addr-chip {
   display: inline-block;
   padding: 3px 10px;
-  background: var(--blue-dim);
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  background: var(--cyan-dim);
+  border: 1px solid rgba(0, 240, 255, 0.15);
   border-radius: 6px;
   font-size: 0.75rem;
-  color: var(--blue-bright);
+  color: var(--cyan-base);
 }
 
 .val-cell { color: var(--text-secondary); }
@@ -238,12 +239,12 @@ onMounted(() => {
 }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
-.filter-bar { padding: 12px 16px; margin-bottom: 14px; }
+.filter-bar { padding: 10px 14px; margin-bottom: 12px; }
 .filter-group { display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
-.filter-input { width: 240px; }
+.filter-input { width: 220px; }
 .filter-select {
   width: 140px; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A6680' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(0%2C 240%2C 255%2C 0.3)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;

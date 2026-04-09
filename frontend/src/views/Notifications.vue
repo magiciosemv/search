@@ -119,17 +119,17 @@ const deleteNotification = async (id) => {
 
 <style scoped>
 .notif-list { display: flex; flex-direction: column; gap: 10px; }
-.notif-card { padding: 18px 20px; }
-.notif-card.telegram { border-left: 3px solid #229ED9; }
-.notif-card.email { border-left: 3px solid var(--amber-base); }
+.notif-card { padding: 16px 18px; }
+.notif-card.telegram { border-left: 2px solid var(--cyan-base); box-shadow: -2px 0 8px rgba(0, 240, 255, 0.1); }
+.notif-card.email { border-left: 2px solid var(--amber-base); box-shadow: -2px 0 8px rgba(255, 170, 0, 0.1); }
 
 .notif-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .notif-identity { display: flex; align-items: center; gap: 14px; }
 .notif-icon {
   width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px;
 }
-.notif-icon.telegram { background: rgba(34, 158, 217, 0.1); color: #229ED9; }
-.notif-icon.email { background: rgba(245, 158, 11, 0.1); color: var(--amber-bright); }
+.notif-icon.telegram { background: var(--cyan-dim); color: var(--cyan-base); }
+.notif-icon.email { background: var(--amber-dim); color: var(--amber-base); }
 .notif-name { font-size: 0.9375rem; font-weight: 600; }
 .notif-type { font-size: 0.75rem; margin-top: 2px; }
 
@@ -145,8 +145,8 @@ const deleteNotification = async (id) => {
   background: var(--text-dim); position: absolute; top: 2px; left: 2px;
   transition: all var(--duration-normal) var(--ease-out);
 }
-.toggle-btn.on .toggle-track { background: rgba(0, 214, 143, 0.12); border-color: rgba(0, 214, 143, 0.3); }
-.toggle-btn.on .toggle-thumb { left: 18px; background: var(--green-base); box-shadow: 0 0 8px rgba(0, 214, 143, 0.4); }
+.toggle-btn.on .toggle-track { background: rgba(0, 255, 136, 0.12); border-color: rgba(0, 255, 136, 0.3); }
+.toggle-btn.on .toggle-thumb { left: 18px; background: var(--green-base); box-shadow: 0 0 8px var(--green-glow); }
 .toggle-text { font-size: 0.6875rem; font-family: var(--font-mono); font-weight: 600; color: var(--text-dim); letter-spacing: 0.04em; }
 .toggle-btn.on .toggle-text { color: var(--green-base); }
 
@@ -166,5 +166,5 @@ const deleteNotification = async (id) => {
   font-family: var(--font-sans); cursor: pointer; transition: all var(--duration-fast) ease;
 }
 .type-btn:hover { border-color: var(--border-default); color: var(--text-secondary); }
-.type-btn.active { border-color: var(--blue-base); background: var(--blue-dim); color: var(--blue-bright); }
+.type-btn.active { border-color: var(--cyan-base); background: var(--cyan-dim); color: var(--cyan-base); box-shadow: 0 0 12px rgba(0, 240, 255, 0.1); }
 </style>

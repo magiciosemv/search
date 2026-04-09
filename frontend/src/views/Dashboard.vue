@@ -1,12 +1,12 @@
 <template>
   <div class="page-container">
     <div class="stats-grid stagger">
-      <div v-for="stat in statCards" :key="stat.label" class="stat-card glass animate-fade-up">
+      <div v-for="stat in statCards" :key="stat.label" class="stat-card holo-border animate-fade-up">
         <div class="stat-top">
-          <span class="stat-label">{{ t(stat.label) }}</span>
+          <span class="stat-label font-display">{{ t(stat.label) }}</span>
           <div class="stat-icon" :class="stat.iconClass" v-html="stat.icon"></div>
         </div>
-        <div class="stat-value font-mono">{{ stats[stat.key] ?? 0 }}</div>
+        <div class="stat-value">{{ stats[stat.key] ?? 0 }}</div>
         <div class="stat-footer text-dim font-mono">{{ t(stat.sub) }}</div>
       </div>
     </div>
@@ -32,11 +32,11 @@
       <EmptyState v-if="!recentAlerts || recentAlerts.length === 0" :message="t('dashboard.noAlerts')" />
       <div v-else class="alert-list">
         <div v-for="alert in recentAlerts" :key="alert.id" class="alert-row">
-          <span class="alert-addr font-mono text-blue">{{ truncateAddress(alert.address || alert.addressStr) }}</span>
-          <span class="badge badge-blue">{{ alert.alert_type }}</span>
+          <span class="alert-addr font-mono neon-cyan">{{ truncateAddress(alert.address || alert.addressStr) }}</span>
+          <span class="badge badge-cyan">{{ alert.alert_type }}</span>
           <span class="alert-diff font-mono">
             <span class="text-muted">{{ formatSOL(alert.old_value) }}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-dim)"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--cyan-base)"><polyline points="9 18 15 12 9 6"/></svg>
             <span>{{ formatSOL(alert.new_value) }}</span>
           </span>
           <span class="alert-time text-muted font-mono">{{ formatDate(alert.sent_at) }}</span>
@@ -79,7 +79,7 @@ const backupDB = async () => {
 
 const statCards = [
   {
-    label: 'dashboard.wallets', key: 'total_addresses', iconClass: 'icon-blue', sub: 'dashboard.monitored',
+    label: 'dashboard.wallets', key: 'total_addresses', iconClass: 'icon-cyan', sub: 'dashboard.monitored',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>'
   },
   {
@@ -109,52 +109,61 @@ onMounted(() => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 
-.stat-card { padding: 18px 20px; }
+.stat-card { padding: 16px 18px; }
 .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .stat-label {
-  font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--text-muted);
+  font-size: 0.5625rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--cyan-base);
 }
 .stat-icon {
-  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 8px;
 }
-.icon-blue { background: var(--blue-dim); color: var(--blue-bright); }
+.icon-cyan { background: var(--cyan-dim); color: var(--cyan-base); }
 .icon-purple { background: var(--purple-dim); color: var(--purple-base); }
-.icon-amber { background: var(--amber-dim); color: var(--amber-bright); }
-.icon-green { background: var(--green-dim); color: var(--green-bright); }
-.stat-value { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.icon-amber { background: var(--amber-dim); color: var(--amber-base); }
+.icon-green { background: var(--green-dim); color: var(--green-base); }
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
+}
 .stat-footer { font-size: 0.625rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Monitor */
 .monitor-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 18px; margin-bottom: 14px;
+  padding: 10px 16px; margin-bottom: 12px;
 }
 .monitor-left { display: flex; align-items: center; gap: 10px; }
 .monitor-label { font-size: 0.8125rem; font-weight: 500; }
 .monitor-interval {
+  font-family: var(--font-mono);
   font-size: 0.625rem; background: var(--bg-elevated);
   padding: 2px 7px; border-radius: 4px; color: var(--text-dim);
 }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green-base);
+  box-shadow: 0 0 6px var(--green-base), 0 0 12px var(--green-base);
+}
 
 /* Alerts */
-.alerts-section { padding: 18px 20px; }
+.alerts-section { padding: 16px 18px; }
 .alerts-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .view-link {
-  font-size: 0.75rem; font-weight: 600; color: var(--blue-base);
+  font-size: 0.6875rem; font-weight: 600; color: var(--cyan-base);
   transition: color var(--duration-fast) ease;
 }
-.view-link:hover { color: var(--blue-bright); }
+.view-link:hover { opacity: 0.85; }
 
 .alert-list { display: flex; flex-direction: column; gap: 2px; }
 .alert-row {
   display: flex; align-items: center; gap: 14px;
-  padding: 10px 12px; border-radius: 8px;
+  padding: 8px 12px; border-radius: 6px;
   transition: background var(--duration-fast) ease;
   animation: fadeIn 0.3s var(--ease-out) both;
 }

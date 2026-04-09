@@ -19,7 +19,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <div>
-              <div class="rule-type badge badge-blue">{{ rule.rule_type === 'balance_change' ? t('rules.balanceChange') : rule.rule_type }}</div>
+              <div class="rule-type badge badge-cyan">{{ rule.rule_type === 'balance_change' ? t('rules.balanceChange') : rule.rule_type }}</div>
               <div class="rule-wallet text-muted font-mono" v-if="getAddress(rule.address_id)">{{ truncateAddress(getAddress(rule.address_id).address) }} <span class="chain-tag">{{ getChainSymbol(getAddress(rule.address_id).chain) }}</span></div>
             </div>
           </div>
@@ -138,7 +138,7 @@ const deleteRule = async (id) => {
 .rule-right { display: flex; align-items: center; gap: 14px; }
 .rule-threshold { font-size: 1.125rem; font-weight: 700; }
 .rule-actions { display: flex; gap: 6px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
-.chain-tag { color: var(--blue-bright); font-size: 0.625rem; margin-left: 4px; }
+.chain-tag { color: var(--cyan-base); font-size: 0.5625rem; margin-left: 4px; }
 
 /* Toggle */
 .toggle-btn { display: flex; align-items: center; background: none; border: none; cursor: pointer; }
@@ -152,6 +152,6 @@ const deleteRule = async (id) => {
   background: var(--text-dim); position: absolute; top: 2px; left: 2px;
   transition: all var(--duration-normal) cubic-bezier(0.16, 1, 0.3, 1);
 }
-.toggle-btn.on .toggle-track { background: rgba(0, 214, 143, 0.12); border-color: rgba(0, 214, 143, 0.3); }
-.toggle-btn.on .toggle-thumb { left: 18px; background: var(--green-base); box-shadow: 0 0 8px rgba(0, 214, 143, 0.4); }
+.toggle-btn.on .toggle-track { background: rgba(0, 255, 136, 0.12); border-color: rgba(0, 255, 136, 0.3); }
+.toggle-btn.on .toggle-thumb { left: 18px; background: var(--green-base); box-shadow: 0 0 8px var(--green-glow); }
 </style>
